@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:mysql://52.74.206.162:3307/haedal_earn_borrow?useUnicode=true&characterEncoding=utf8&useSSL=false
+    username: haedalOne
+    password: haedalOne!@#
