@@ -4,6 +4,7 @@ import com.sui.haedal.common.R;
 import com.sui.haedal.model.bo.BorrowTotalBo;
 import com.sui.haedal.model.vo.BorrowRateLineVo;
 import com.sui.haedal.model.vo.BorrowVo;
+import com.sui.haedal.model.vo.RateModelVo;
 import com.sui.haedal.service.BorrowService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -40,5 +41,10 @@ public class BorrowRest {
     @PostMapping("/QueryBorrowDetailRateLine")
     public R<List<BorrowRateLineVo>> queryBorrowDetailRateLine(@RequestBody BorrowTotalBo bo) {
         return R.data(service.queryBorrowDetailRateLine(bo));
+    }
+
+    @PostMapping("/QueryBorrowDetailRateModel")
+    public R<RateModelVo> queryBorrowDetailRateModel(@RequestBody BorrowTotalBo bo) {
+        return R.data(service.queryBorrowDetailRateModel(bo));
     }
 }

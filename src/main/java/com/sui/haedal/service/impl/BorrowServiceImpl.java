@@ -44,6 +44,81 @@ public class BorrowServiceImpl implements BorrowService {
 
 
     @Override
+    public RateModelVo queryBorrowDetailRateModel(BorrowTotalBo conditionBo){
+        RateModelVo vo = new RateModelVo();
+        List<RateModelDetailVo> ratesVo = new ArrayList<>();
+        YourTotalSupplyLineBo mysqlConditionBo = borrowTotalConditionBo(conditionBo);
+        List<JSONObject> rates = borrowMapper.queryRateDateGroup(mysqlConditionBo);
+        List<JSONObject> dateSupplyAssets = borrowMapper.dateGroupSupplyAssets(mysqlConditionBo);
+        List<JSONObject> dateBorrowAssets = borrowMapper.dateGroupBorrowAssets(mysqlConditionBo);
+        Map<String,String> supplyTimeMap = dateSupplyAssets.stream().collect(Collectors.toMap(key-> key.getString("timeGroup"),val -> val.getString("supplyAssets"), (v1, v2)-> v1));
+        Map<String,String>  borrowTimeMap = dateBorrowAssets.stream().collect(Collectors.toMap(key-> key.getString("timeGroup"),val -> val.getString("borrowAssets"), (v1, v2)-> v1));
+        String currentU = borrowMapper.marketCurrentU(mysqlConditionBo);
+        vo.setCurrentU(currentU);
+        for (int i = 0; i < rates.size(); i++) {
+            RateModelDetailVo rmd = new RateModelDetailVo();
+            JSONObject rate = rates.get(i);
+
+            String[] rateTypes = rate.getString("rateType").split(",");
+            String[] interestRates = rate.getString("interestRate").split(",");
+
+            rmd.setDateUnit(rate.getString("dateUnit"));
+            rmd.setCurrentU("0");
+
+            if (rateTypes.length > 1) {
+                rmd.setSupplyRate(interestRates[0]);
+                rmd.setBorrowRate(interestRates[1]);
+
+                try {
+                    double s = Double.parseDouble(rmd.getSupplyRate());
+                    double b = Double.parseDouble(rmd.getBorrowRate());
+                    double u = b / s;
+                    rmd.setCurrentU(String.format("%.2f", u));
+                } catch (NumberFormatException e) {
+                    // 处理数值转换异常
+                    rmd.setCurrentU("0.00");
+                }
+            } else if (rateTypes.length > 0) {
+                if ("supply".equals(rateTypes[0])) {
+                    rmd.setSupplyRate(interestRates[0]);
+                    rmd.setBorrowRate("0");
+                } else if ("borrow".equals(rateTypes[0])) {
+                    rmd.setSupplyRate("0");
+                    rmd.setBorrowRate(interestRates[0]);
+                }
+
+                String daySupply = supplyTimeMap.get(rmd.getDateUnit());
+                String dayBorrow = borrowTimeMap.get(rmd.getDateUnit());
+
+                if (daySupply != null && !daySupply.isEmpty()) {
+                    try {
+                        double s = Double.parseDouble(daySupply);
+                        double u = 50000000.0 / s;
+                        rmd.setCurrentU(String.format("%.2f", u));
+                    } catch (NumberFormatException e) {
+                        rmd.setCurrentU("0.00");
+
+                    }
+                }
+
+                if (dayBorrow != null && !dayBorrow.isEmpty()) {
+                    try {
+                        double s = Double.parseDouble(dayBorrow);
+                        double u = s / 26000000.0;
+                        rmd.setCurrentU(String.format("%.2f", u));
+                    } catch (NumberFormatException e) {
+                        rmd.setCurrentU("0.00");
+                    }
+                }
+            }
+            ratesVo.add(rmd);
+        }
+        vo.setRates(ratesVo);
+        vo.setTargetU("0.9");
+        return vo;
+    }
+
+    @Override
     public List<BorrowRateLineVo> queryBorrowDetailRateLine(BorrowTotalBo conditionBo){
         YourTotalSupplyLineBo mysqlConditionBo = borrowTotalConditionBo(conditionBo);
         return borrowMapper.queryBorrowDetailRateLine(mysqlConditionBo);

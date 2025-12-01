@@ -74,4 +74,29 @@
         transaction_time,#{mysqlDateFormat}) = t.timeGroup
         AND rd.transaction_time = t.last_time
     </select>
+
+
+    <select id="queryRateDateGroup" resultType="com.alibaba.fastjson.JSONObject">
+        SELECT dateUnit,GROUP_CONCAT(interestRate) interestRate,GROUP_CONCAT(rate_type) rateType from (
+        SELECT DATE_FORMAT(rd.transaction_time,'%Y-%m-%d') as dateUnit,rd.borrow_rate/10000000000000000 interestRate,rate_type
+        FROM rate_detail rd INNER JOIN (
+        SELECT DATE_FORMAT(transaction_time,'%Y-%m-%d') AS timeGroup, MAX(transaction_time) AS last_time FROM rate_detail
+        where market_id=#{marketId} and rate_type in ('supply','borrow') GROUP BY timeGroup,rate_type
+        ) t ON DATE_FORMAT(transaction_time,'%Y-%m-%d') = t.timeGroup AND rd.transaction_time = t.last_time  ORDER BY rate_type DESC
+        )a GROUP BY dateUnit
+    </select>
+
+    <select id="dateGroupSupplyAssets" resultType="com.alibaba.fastjson.JSONObject">
+        SELECT IFNULL(sum(assets),0) supplyAssets,DATE_FORMAT(transaction_time,'%Y-%m-%d') timeGroup from
+        borrow_supply_detail where market_id =#{marketId} and supply_type=1  GROUP BY timeGroup
+    </select>
+
+    <select id="dateGroupBorrowAssets" resultType="com.alibaba.fastjson.JSONObject">
+        SELECT IFNULL(sum(assets),0) borrowAssets,DATE_FORMAT(transaction_time,'%Y-%m-%d') timeGroup from borrow_detail
+          where market_id=#{marketId} GROUP BY timeGroup
+    </select>
+
+    <select id="marketCurrentU" resultType="string">
+        SELECT total_loan_amount/total_supply_amount currentU from borrow where market_id=#{marketId}
+    </select>
 </mapper>

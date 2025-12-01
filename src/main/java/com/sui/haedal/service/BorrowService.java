@@ -4,6 +4,7 @@ import com.sui.haedal.model.bo.BorrowTotalBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.vo.BorrowRateLineVo;
 import com.sui.haedal.model.vo.BorrowVo;
+import com.sui.haedal.model.vo.RateModelVo;
 
 import java.util.List;
 
@@ -19,6 +20,8 @@ public interface BorrowService {
     List<BorrowRateLineVo> queryBorrowDetailLine(BorrowTotalBo conditionBo);
 
     List<BorrowRateLineVo> queryBorrowDetailRateLine(BorrowTotalBo conditionBo);
+
+    RateModelVo queryBorrowDetailRateModel(BorrowTotalBo conditionBo);
 
 
 }
