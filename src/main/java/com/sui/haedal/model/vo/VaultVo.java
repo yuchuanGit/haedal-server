@@ -1,0 +1,148 @@
+package com.sui.haedal.model.vo;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+
+import java.io.Serializable;
+import java.util.Date;
+
+/**
+ * vaultVo
+ */
+@Data
+@Schema(title = "VaultVo结构", description = "VaultVo结构")
+public class VaultVo implements Serializable {
+
+    /**
+     * 主键id
+     */
+    private Integer id;
+
+    /**
+     * 金库ID
+     */
+    @Schema(description = "金库ID")
+    private String vaultId;
+
+    /**
+     * 所有者
+     */
+    @Schema(description = "所有者")
+    private String owner;
+
+    /**
+     * 管理者
+     */
+    @Schema(description = "管理者")
+    private String curator;
+
+    /**
+     * 分配者
+     */
+    @Schema(description = "分配者")
+    private String allocator;
+
+    /**
+     * 守护者
+     */
+    @Schema(description = "守护者")
+    private String guardian;
+
+    /**
+     * 资产小数位数
+     */
+    @Schema(description = "资产小数位数")
+    private Integer assetDecimals;
+
+    /**
+     * 资产类型
+     */
+    @Schema(description = "资产类型")
+    private String assetType;
+
+    /**
+     * 质押代币类型
+     */
+    @Schema(description = "质押代币类型")
+    private String htokenType;
+
+    /**
+     * 摘要
+     */
+    @Schema(description = "digest")
+    private String digest;
+
+    /**
+     * 交易时间戳（unix毫秒/秒）
+     */
+    @Schema(description = "交易时间戳")
+    private Long transactionTimeUnix;
+
+    /**
+     * 交易时间
+     */
+    @Schema(description = "交易时间")
+    private Date transactionTime;
+
+    /**
+     * vault名称
+     */
+    @Schema(description = "vault名称")
+    private String vaultName;
+
+    /**
+     * 年化收益率
+     * APY= [（单日收益 ÷ 存款本金）× 365] × 100%
+     */
+    @Schema(description = "apy年化收益率")
+    private String apy;
+
+    /**
+     * 该池子总存款
+     */
+    @Schema(description = "该池子总存款")
+    private String tvl;
+
+    /**
+     * 该池子总存款-剩余容量
+     */
+    @Schema(description = "该池子总存款-剩余容量")
+    private String tvlCapacity;
+
+    /**
+     * 用户存款规模(前端合约)
+     */
+    @Schema(description = "用户存款规模(前端合约)")
+    private String yourDeposit;
+
+    /**
+     * 用户存款收益
+     */
+    @Schema(description = "用户存款收益")
+    private String earnings;
+
+    @Schema(description = "assetTypeFeedId")
+    private String  assetTypeFeedId;
+
+    @Schema(description = "assetTypeFeedObjectId")
+    private String assetTypeFeedObjectId;
+
+
+    /**
+     * 抵押代币类型
+     */
+    @Schema(description = "borrow抵押代币类型")
+    private String collateralTokenType;
+
+    /**
+     * 清算借贷价值比
+     */
+    @Schema(description = "borrow清算借贷价值比")
+    private String lltv;
+
+    @Schema(description = "vault总数量")
+    private String vaultTotalAssets;
+
+
+}

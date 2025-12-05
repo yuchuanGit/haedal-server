@@ -6,6 +6,8 @@ import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.sui.haedal.common.DateUtil;
+import com.sui.haedal.common.PythOracleUtil;
+import com.sui.haedal.common.TimePeriodUtil;
 import com.sui.haedal.mapper.BorrowMapper;
 import com.sui.haedal.mapper.CoinConfigMapper;
 import com.sui.haedal.model.bo.BorrowTotalBo;
@@ -23,6 +25,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,10 +40,10 @@ import java.util.stream.Collectors;
 @Service("borrowService")
 public class BorrowServiceImpl implements BorrowService {
 
-    @Autowired
+    @Resource
     private BorrowMapper borrowMapper;
 
-    @Autowired
+    @Resource
     private CoinConfigMapper coinConfigMapper;
 
 
@@ -169,11 +172,11 @@ public class BorrowServiceImpl implements BorrowService {
             BeanUtils.copyProperties(list.get(0),vo);
             vo.setLltv(ltvConvPercentage(vo.getLltv()));
             vo.setLtv(ltvConvPercentage(vo.getLtv()));
-            String collateralCoinType = coinTokenTypeVal(vo.getCollateralTokenType());
-            String loanCoinType = coinTokenTypeVal(vo.getLoanTokenType());
+            String collateralCoinType = TimePeriodUtil.coinTokenTypeVal(vo.getCollateralTokenType());
+            String loanCoinType = TimePeriodUtil.coinTokenTypeVal(vo.getLoanTokenType());
             vo.setPair(collateralCoinType + "/" + loanCoinType);
-            vo.setCollateralCoinDecimals(GetCoinDecimal(collateralCoinType));
-            vo.setLoanCoinDecimals(GetCoinDecimal(loanCoinType));
+            vo.setCollateralCoinDecimals(TimePeriodUtil.getCoinDecimal(collateralCoinType));
+            vo.setLoanCoinDecimals(TimePeriodUtil.getCoinDecimal(loanCoinType));
             List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
             Map<String,CoinConfig> coinConfigMap = coinList.stream().collect(Collectors.toMap(CoinConfig::getCoinType,Function.identity(),(v1,v2)->v1));
 
@@ -218,11 +221,11 @@ public class BorrowServiceImpl implements BorrowService {
             BeanUtils.copyProperties(borrow, vo);
             CoinConfig collateralCoin = coinConfigMap.get(vo.getCollateralTokenType());
             CoinConfig loanCoin = coinConfigMap.get(vo.getLoanTokenType());
-            String collateralType = coinTokenTypeVal(vo.getCollateralTokenType());
-            String loanType = coinTokenTypeVal(vo.getLoanTokenType());
+            String collateralType = TimePeriodUtil.coinTokenTypeVal(vo.getCollateralTokenType());
+            String loanType = TimePeriodUtil.coinTokenTypeVal(vo.getLoanTokenType());
             vo.setPair(collateralType + "/" + loanType);
-            vo.setCollateralCoinDecimals(GetCoinDecimal(collateralType));
-            vo.setLoanCoinDecimals(GetCoinDecimal(loanType));
+            vo.setCollateralCoinDecimals(TimePeriodUtil.getCoinDecimal(collateralType));
+            vo.setLoanCoinDecimals(TimePeriodUtil.getCoinDecimal(loanType));
             if(collateralCoin!=null){
                 vo.setCollateralFeedId(collateralCoin.getFeedId());
                 vo.setCollateralFeedObjectId(collateralCoin.getFeedObjectId());
@@ -406,7 +409,6 @@ public class BorrowServiceImpl implements BorrowService {
             isWeek = false;
         }
         start = start.plusNanos(1000 * 1000000);
-
         System.out.println("start=="+DateUtil.LocalDateTimeFormat(start,DateUtil.YMD_HMS));
         System.out.println("end=="+DateUtil.LocalDateTimeFormat(end,DateUtil.YMD_HMS));
         bo.setMysqlDateFormat(dateFormat);
@@ -417,12 +419,10 @@ public class BorrowServiceImpl implements BorrowService {
         List<UserTotalCollateralVo> collateralWithdrawVos =borrowMapper.userCollateralWithdraw(bo);
         Map<String,String> feedIds = collateralSupplyVos.stream().collect(Collectors.toMap(UserTotalCollateralVo::getFeedId, UserTotalCollateralVo::getFeedId,(v1, v2)->  v1));
         feedIds.putAll(collateralWithdrawVos.stream().collect(Collectors.toMap(UserTotalCollateralVo::getFeedId, UserTotalCollateralVo::getFeedId,(v1, v2)->  v1)));
-        Map<String, PythCoinFeedPriceVo> coinPrice = getPythPrice(feedIds);
+        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
 
         dateSupplyMaps(collateralSupplyVos,coinPrice,dateSupplyMaps);
         List<String> withdrawTransactionTimes = dateWithdrawMaps(collateralWithdrawVos,coinPrice,dateWithdrawMaps,dateWithdrawRemoveMaps);
-        System.out.println("存记录="+JSON.toJSON(dateSupplyMaps));
-        System.out.println("取记录="+JSON.toJSON(dateWithdrawMaps));
         matchSupplyTimeCalculate(dateSupplyMaps,withdrawTransactionTimes,dateWithdrawMaps,dateWithdrawRemoveMaps,isWeek,dateKeys);
         matchWithdrawTimeCalculate(dateSupplyMaps,dateWithdrawRemoveMaps,dateKeys);
 //        double supplyCollateralSum = 0.00;
@@ -618,7 +618,6 @@ public class BorrowServiceImpl implements BorrowService {
         if (targetTime == null) {
             return resultKeys;
         }
-
         for (String key : supplyKeys) {
             Date keyTime = parseTimeKey(key);
             if (keyTime != null && keyTime.before(targetTime)) {
@@ -715,9 +714,9 @@ public class BorrowServiceImpl implements BorrowService {
      */
     public double calculateCoinDecimalFloat(String val, String coinType) {
         // 获取最后一个::后的币种类型
-        String loanCoinType = coinTokenTypeVal(coinType);
+        String loanCoinType = TimePeriodUtil.coinTokenTypeVal(coinType);
         // 获取币种的小数位数
-        int coinDecimal = GetCoinDecimal(loanCoinType);
+        int coinDecimal = TimePeriodUtil.getCoinDecimal(loanCoinType);
 
         // 处理科学计数法并转换为浮点值
         double floatVal = 0.0;
@@ -732,68 +731,6 @@ public class BorrowServiceImpl implements BorrowService {
         // 除以10的coinDecimal次方
         return floatVal / Math.pow(10, coinDecimal);
     }
-
-
-    public Map<String, PythCoinFeedPriceVo> getPythPrice(Map<String, String> feedIds) {
-        String BASE_URL = "https://hermes-beta.pyth.network/v2/updates/price/latest";
-        Map<String, PythCoinFeedPriceVo> feedPrices = new HashMap<>();
-        OkHttpClient client = new OkHttpClient();
-
-        try {
-            // 构建请求参数
-            HttpUrl.Builder urlBuilder = HttpUrl.parse(BASE_URL).newBuilder();
-            for (String feedId : feedIds.values()) {
-//                String cleanId = feedId.startsWith("0x") ? feedId.substring(2) : feedId;
-                urlBuilder.addQueryParameter("ids[]", feedId); // 直接添加ids[]参数
-            }
-            String fullURL = urlBuilder.build().toString();
-
-            // 发送请求
-            Request request = new Request.Builder().url(fullURL).build();
-            Response response = client.newCall(request).execute();
-
-            // 处理响应
-            if (!response.isSuccessful()) {
-                log.error("请求失败，状态码：{}", response.code());
-                return feedPrices;
-            }
-
-            // 解析响应体
-            String responseBody = response.body().string();
-            JSONObject jsonObject = JSON.parseObject(responseBody);
-            JSONArray parsedArray = jsonObject.getJSONArray("parsed");
-            if (parsedArray == null || parsedArray.isEmpty()) {
-                log.error("PythPrice-parsed数组为空或不存在");
-                return feedPrices;
-            }
-
-            // 遍历解析每个元素
-            for (int i = 0; i < parsedArray.size(); i++) {
-                JSONObject parsedObj = parsedArray.getJSONObject(i);
-                if (parsedObj == null) continue;
-
-                PythCoinFeedPriceVo feedPrice = new PythCoinFeedPriceVo();
-                // 设置FeedId（拼接0x前缀）
-                String id = parsedObj.getString("id");
-                feedPrice.setFeedId("0x" + id);
-
-                // 解析price对象
-                JSONObject priceObj = parsedObj.getJSONObject("price");
-                if (priceObj != null) {
-                    feedPrice.setPrice(priceObj.getString("price"));
-                    feedPrice.setExpo(priceObj.getDoubleValue("expo"));
-                }
-
-                feedPrices.put(feedPrice.getFeedId(), feedPrice);
-            }
-
-        } catch (Exception e) {
-            log.error("请求异常：", e);
-        }
-
-        return feedPrices;
-    }
-
 
     public  String scientificComputingConvStr(String val) {
         if (val == null || val.isEmpty()) {
@@ -833,18 +770,5 @@ public class BorrowServiceImpl implements BorrowService {
         return floatVal / denominator;
     }
 
-    private String coinTokenTypeVal(String coinType){
-        String[] collateralTokens = coinType.split("::");
-        return collateralTokens[collateralTokens.length - 1]; // 取最后一个元素
-    }
-
-    private int GetCoinDecimal(String typeVal) {
-        if("SUI".equals(typeVal)){
-            return 9;
-        }else if("USDC".equals(typeVal)){
-            return 6;
-        }
-        return 0;
-    }
 }
 

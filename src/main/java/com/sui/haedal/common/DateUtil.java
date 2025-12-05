@@ -1,6 +1,7 @@
 package com.sui.haedal.common;
 
 import com.sui.haedal.model.vo.BorrowRateLineVo;
+import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -11,10 +12,35 @@ import java.util.List;
 
 public class DateUtil {
     public static final String YMD_HMS = "yyyy-MM-dd HH:mm:ss";
-    private static final String DATE_FORMAT_YMD = "yyyy-MM-dd";
-    private static final String DATE_FORMAT_YMD_HM = "yyy-MM-dd HH:mm";
-    private static final String DATE_FORMAT_MD = "MM/dd";
-    private static final String DATE_FORMAT_MD_H = "MM/dd HH";
+    public static final String DATE_FORMAT_YMD = "yyyy-MM-dd";
+    public static final String DATE_FORMAT_YMD_HM = "yyyy-MM-dd HH:mm";
+    public static final String DATE_FORMAT_MD = "MM/dd";
+    public static final String DATE_FORMAT_MD_H = "MM/dd HH";
+
+
+    public static List<TimePeriodStatisticsVo> timePeriodDayGenerateNew(LocalDateTime start, LocalDateTime end, boolean isHours) {
+        List<TimePeriodStatisticsVo> lines = new ArrayList<>();
+        String currentDate = LocalDateTime.now().format(DateTimeFormatter.ofPattern(DATE_FORMAT_YMD));
+
+        while (!start.isAfter(end)) {
+            if (isHours) {
+                String startDate = start.format(DateTimeFormatter.ofPattern(DATE_FORMAT_YMD));
+                if (currentDate.equals(startDate)) {
+                    lines.addAll(dayGenerate24HoursNew(startDate, true));
+                } else {
+                    lines.addAll(dayGenerate24HoursNew(startDate, false));
+                }
+            } else {
+                TimePeriodStatisticsVo b = initTimePeriodStatistics(start, false);
+                lines.add(b);
+            }
+
+            // 日期加1天
+            start = start.plusDays(1);
+        }
+
+        return lines;
+    }
 
 
     /**
@@ -75,6 +101,27 @@ public class DateUtil {
         return lines;
     }
 
+    public static List<TimePeriodStatisticsVo> dayGenerate24HoursNew(String yyyyMMdd, boolean isCurrentDate) {
+        List<TimePeriodStatisticsVo> lines = new ArrayList<>();
+        String dateTimeStr = yyyyMMdd + " 00:00";
+
+        LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ofPattern(DATE_FORMAT_YMD_HM));
+        lines.add(initTimePeriodStatistics(dateTime, true));
+
+        int length = 23;
+        if (isCurrentDate) {
+            LocalDateTime now = LocalDateTime.now();
+            length = now.getHour();
+        }
+
+        for (int i = 0; i < length; i++) {
+            dateTime = dateTime.plusHours(1);
+            lines.add(initTimePeriodStatistics(dateTime, true));
+        }
+
+        return lines;
+    }
+
     /**
      * 初始化BorrowLine对象
      * @param dateTime 时间
@@ -87,6 +134,20 @@ public class DateUtil {
         m.setDateUnit(dateTime.format(getDateGroupFormatter(isHours)));
         return m;
     }
+
+    /**
+     * 初始化BorrowLine对象
+     * @param dateTime 时间
+     * @param isHours 是否小时粒度
+     * @return 初始化后的BorrowLine
+     */
+    private static TimePeriodStatisticsVo initTimePeriodStatistics(LocalDateTime dateTime, boolean isHours) {
+        TimePeriodStatisticsVo m = new TimePeriodStatisticsVo();
+        m.setTransactionTime(dateTime.format(DateTimeFormatter.ofPattern(DATE_FORMAT_YMD_HM)));
+        m.setDateUnit(dateTime.format(getDateGroupFormatter(isHours)));
+        return m;
+    }
+
 
     /**
      * 获取日期分组格式化器
