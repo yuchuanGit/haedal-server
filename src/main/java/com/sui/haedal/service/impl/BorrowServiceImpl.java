@@ -11,6 +11,7 @@ import com.sui.haedal.common.TimePeriodUtil;
 import com.sui.haedal.mapper.BorrowMapper;
 import com.sui.haedal.mapper.CoinConfigMapper;
 import com.sui.haedal.model.bo.BorrowTotalBo;
+import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
@@ -382,233 +383,112 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Override
     public List<BorrowRateLineVo> yourTotalSupplyLine(BorrowTotalBo conditionBo){
-//        List<BorrowRateLineVo> data = new ArrayList<>();
-        Map<String,BorrowRateLineVo> dateSupplyMaps = new HashMap<>();
-        Map<String,BorrowRateLineVo> dateWithdrawMaps = new HashMap<>();
-        Map<String,BorrowRateLineVo> dateWithdrawRemoveMaps = new HashMap<>();
-        YourTotalSupplyLineBo bo = new YourTotalSupplyLineBo();
-        LocalDateTime now = LocalDateTime.now();
-        String dateFormat = "%m/%d %H"; // 默认格式
-        boolean isWeek = true;
-        Map<String,BorrowRateLineVo>  dateKeys = new HashMap<>();
-        // 构造当天23:59:59.999的结束时间
-        LocalDateTime end = now.with(LocalTime.of(23, 59, 59, 999_000_000));
-        // 默认取7天前的开始时间
-        LocalDateTime start = end.minusDays(7);
+        List<BorrowRateLineVo> data = new ArrayList<>();
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
+        List<String> supplyTransactionTimes = new ArrayList<>();//存交易时间
+        List<String> withdrawTransactionTimes = new ArrayList<>();//取交易时间
+        Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
 
-        // 根据时间类型调整
-        if (conditionBo.getTimePeriodType() == 2) {
-            dateFormat = "%m/%d";
-            start = end.minusDays(30);
-            isWeek = false;
-        }
-
-        if (conditionBo.getTimePeriodType() == 3) {
-            dateFormat = "%m/%d";
-            start = end.minusDays(90);
-            isWeek = false;
-        }
-        start = start.plusNanos(1000 * 1000000);
-        System.out.println("start=="+DateUtil.LocalDateTimeFormat(start,DateUtil.YMD_HMS));
-        System.out.println("end=="+DateUtil.LocalDateTimeFormat(end,DateUtil.YMD_HMS));
-        bo.setMysqlDateFormat(dateFormat);
-        bo.setStart(Date.from(start.atZone(ZoneId.systemDefault()).toInstant()));
-        bo.setEnd(Date.from(end.atZone(ZoneId.systemDefault()).toInstant()));
-        bo.setUserAddress(conditionBo.getUserAddress());
-        List<UserTotalCollateralVo> collateralSupplyVos = borrowMapper.userCollateralSupply(bo);
-        List<UserTotalCollateralVo> collateralWithdrawVos =borrowMapper.userCollateralWithdraw(bo);
-        Map<String,String> feedIds = collateralSupplyVos.stream().collect(Collectors.toMap(UserTotalCollateralVo::getFeedId, UserTotalCollateralVo::getFeedId,(v1, v2)->  v1));
-        feedIds.putAll(collateralWithdrawVos.stream().collect(Collectors.toMap(UserTotalCollateralVo::getFeedId, UserTotalCollateralVo::getFeedId,(v1, v2)->  v1)));
+//        Map<String,TimePeriodStatisticsVo> dateSupplyMaps = new HashMap<>();
+//        Map<String,BorrowRateLineVo> dateWithdrawMaps = new HashMap<>();
+//        Map<String,BorrowRateLineVo> dateWithdrawRemoveMaps = new HashMap<>();
+//        Map<String,BorrowRateLineVo>  dateKeys = new HashMap<>();
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType());
+        statisticsBo.setUserAddress(conditionBo.getUserAddress());
+        List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.userCollateralSupply(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.userCollateralSupplyLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.userCollateralWithdraw(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralWithdrawLtVos =borrowMapper.userCollateralWithdrawLTTransactionTime(statisticsBo);
+        Map<String,String> feedIds = collateralSupplyVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1));
+        feedIds.putAll(collateralWithdrawVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1)));
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
+//        dateSupplyMaps(collateralSupplyVos,coinPrice,dateSupplyMaps);
+//        List<String> withdrawTransactionTimes = dateWithdrawMaps(collateralWithdrawVos,coinPrice,dateWithdrawMaps,dateWithdrawRemoveMaps);
+//        matchSupplyTimeCalculate(dateSupplyMaps,withdrawTransactionTimes,dateWithdrawMaps,dateWithdrawRemoveMaps,statisticsBo.getIsWeek(),dateKeys);
+//        matchWithdrawTimeCalculate(dateSupplyMaps,dateWithdrawRemoveMaps,dateKeys);
 
-        dateSupplyMaps(collateralSupplyVos,coinPrice,dateSupplyMaps);
-        List<String> withdrawTransactionTimes = dateWithdrawMaps(collateralWithdrawVos,coinPrice,dateWithdrawMaps,dateWithdrawRemoveMaps);
-        matchSupplyTimeCalculate(dateSupplyMaps,withdrawTransactionTimes,dateWithdrawMaps,dateWithdrawRemoveMaps,isWeek,dateKeys);
-        matchWithdrawTimeCalculate(dateSupplyMaps,dateWithdrawRemoveMaps,dateKeys);
-//        double supplyCollateralSum = 0.00;
-//        double withdrawCollateralSum = 0.00; // 原逻辑中未使用，保留声明
-//        for (UserTotalCollateralVo um : collateralSupplyVos) {
-//            BorrowRateLineVo b = new BorrowRateLineVo();
-//            PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(um.getFeedId());
-//
-//            // 调用工具方法计算USD单价
-//            double usdUnitPrice = feedIdUsdUnitPrice(pythCoinFeedPrice);
-//
-//            // 计算币种金额的浮点值（假设CalculateCoinDecimalFloat方法已实现）
-//            double floatAmountVal = calculateCoinDecimalFloat(um.getAmount(), um.getCoinType());
-//
-//            // 计算USD金额并累加
-//            double coinUsdAmount = floatAmountVal * usdUnitPrice;
-//            supplyCollateralSum += coinUsdAmount;
-////
-////            // 设置BorrowLine字段（保留两位小数）
-//            b.setAmount(String.format("%.2f", supplyCollateralSum));
-//            b.setTotalAmount(String.format("%.2f", supplyCollateralSum));
-//            b.setDateUnit(um.getDateUnit());
-//            b.setTransactionTime(um.getTransactionTime());
-//
-//            // 更新dateMaps
-//            if (!dateSupplyMaps.containsKey(um.getDateUnit())) {
-//                dateSupplyMaps.put(um.getDateUnit(), b);
-//            } else {
-//                BorrowRateLineVo dateData = dateSupplyMaps.get(um.getDateUnit());
-//                dateData.setAmount(String.format("%.2f", supplyCollateralSum));
-//                dateSupplyMaps.put(um.getDateUnit(), dateData); // 或直接修改对象（因对象引用传递）
-//            }
-//        }
+//        List<BorrowRateLineVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerate(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+        /**存/取list转map计算usd**/
+        Map<String, TimePeriodStatisticsVo> dateUnitSupplyMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralSupplyVos,collateralSupplyLtVos,coinPrice,supplyTransactionTimes,null);
+        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralWithdrawVos,collateralWithdrawLtVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
+        /**循环存时间点匹配对应取时间点 计算当前剩余数量**/
+        TimePeriodUtil.matchDepositTimeCalculate(dateUnitSupplyMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
+        /**循环取时间点匹配对应取时间点 计算当前剩余数量**/
+        TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitSupplyMap,dateUnitKeys);
+        /**虚拟时间段生成**/
+        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
 
-//        List<String> withdrawTransactionTimes = new ArrayList<>();
-//        for (UserTotalCollateralVo um : collateralWithdrawVos) {
-//            withdrawTransactionTimes.add(um.getTransactionTime());
-//            BorrowRateLineVo b = new BorrowRateLineVo();
-//            PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(um.getFeedId());
-//
-//            // 调用工具方法计算USD单价
-//            double usdUnitPrice = feedIdUsdUnitPrice(pythCoinFeedPrice);
-//
-//            // 计算币种金额的浮点值（假设CalculateCoinDecimalFloat方法已实现）
-//            double floatAmountVal = calculateCoinDecimalFloat(um.getAmount(), um.getCoinType());
-//
-//            // 计算USD金额并累加
-//            double coinUsdAmount = floatAmountVal * usdUnitPrice;
-//            withdrawCollateralSum += coinUsdAmount;
-////
-////            // 设置BorrowLine字段（保留两位小数）
-//            b.setAmount(String.format("%.2f", withdrawCollateralSum));
-//            b.setTotalAmount(String.format("%.2f", withdrawCollateralSum));
-//            b.setDateUnit(um.getDateUnit());
-//            b.setTransactionTime(um.getTransactionTime());
-//
-//            // 更新dateMaps
-//            if (!dateWithdrawMaps.containsKey(um.getDateUnit())) {
-//                dateWithdrawMaps.put(um.getDateUnit(), b);
-//                dateWithdrawRemoveMaps.put(um.getDateUnit(), b);
-//            } else {
-//                BorrowRateLineVo dateData = dateWithdrawMaps.get(um.getDateUnit());
-//                dateData.setAmount(String.format("%.2f", withdrawCollateralSum));
-//                dateWithdrawMaps.put(um.getDateUnit(), dateData);
-//                dateWithdrawRemoveMaps.put(um.getDateUnit(), dateData);
-//            }
-//        }
+        /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
+        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
 
-//        withdrawTransactionTimes.sort((s1,s2)-> s2.compareTo(s1));//倒序
-//        for (BorrowRateLineVo bl : dateSupplyMaps.values()) {
-//            BorrowRateLineVo withdraw = dateWithdrawMaps.get(bl.getDateUnit());
-//            if (withdraw == null) {
-//                log.info(bl.getDateUnit() + "时间没有取抵押");
-//                // 获取新的小于当前时间的key
-//                String newLessThanTimeStr = tagerNewLessThanKey(bl.getTransactionTime(), withdrawTransactionTimes);
-//                Date dateL = parseTimeKey(newLessThanTimeStr);
-//                String targetStr = DateUtil.dateGroupFormat(isWeek,dateL);
-//                BorrowRateLineVo withdrawLessThanSupply = dateWithdrawMaps.get(targetStr);
-//                if(null==withdrawLessThanSupply){
-//                    log.info("取抵押没有小于存TransactionTime%="+bl.getTransactionTime());
-//                }else{
-//                    BigDecimal val = strConversionDecimal(bl.getAmount()).subtract(strConversionDecimal(withdrawLessThanSupply.getAmount()));
-//                    bl.setAmount(val.toPlainString());
-//                }
-//            } else {
-//                try {
-//                    BigDecimal val = strConversionDecimal(bl.getAmount()).subtract(strConversionDecimal(withdraw.getAmount()));
-//                    bl.setAmount(val.toPlainString());
-//                } catch (NumberFormatException e) {
-//                    // 处理数字转换异常
-//                    log.info("金额转换失败: " + e.getMessage());
-//                }
-//            }
-//            data.add(bl);
-//            dateKeys.put(bl.getDateUnit(),bl);
-//            dateWithdrawRemoveMaps.remove(bl.getDateUnit());
-//        }
-
-//        List<String> supplyKeys = supplyCollateralTimeStrSortDescLambda(dateSupplyMaps);
-//
-//        SimpleDateFormat targetSdf = new SimpleDateFormat("MM/dd HH");
-//
-//        for (BorrowRateLineVo wl : dateWithdrawRemoveMaps.values()) {
-//            // 获取新的小于当前时间的key
-//            String newLessThanTimeStr = tagerNewLessThanKey(wl.getTransactionTime(), supplyKeys);
-//
-//            try {
-//                // 解析时间并格式化
-//                Date time = parseTimeKey(newLessThanTimeStr);
-//                String targetStr = targetSdf.format(time);
-//
-//                // 查找对应的supply对象
-//                BorrowRateLineVo supplyO = dateSupplyMaps.get(targetStr);
-//                if (supplyO == null) {
-//                    log.info("YourTotalSupplyLine supplyDate=" + targetStr);
-//                } else {
-//                   BigDecimal val = strConversionDecimal(supplyO.getTotalAmount()).subtract(strConversionDecimal(wl.getAmount()));
-//                    wl.setAmount(val.toPlainString());
-//                    data.add(wl);
-//                    dateKeys.put(wl.getDateUnit(),wl);
-//                }
-//            } catch (NumberFormatException e) {
-//                log.error("金额转换失败: " + e.getMessage());
-//            }
-//        }
-//        sortLinesByTransactionTimeAscLambda(data);
-        List<BorrowRateLineVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerate(start,end,isWeek);
-        List<String> supplyWithdrawKeysDesc = supplyCollateralTimeStrSortDescLambda(dateKeys); //TransactionTime日期从大到小排序
-        List<String> supplyWithdrawKeys = supplyWithdrawKeysDesc;
-        supplyWithdrawKeys.sort((s1,s2)-> s1.compareTo(s2)); //TransactionTime日期从小到大排序
-        List<BorrowRateLineVo> resultData = new ArrayList<>();
-
-        for (BorrowRateLineVo rsVal : virtualTimePeriodData) {
-            BorrowRateLineVo obj = new BorrowRateLineVo();
-            BorrowRateLineVo val = dateKeys.get(rsVal.getDateUnit());
-
-            if (val == null) {
-                // 获取小于目标时间的key列表并降序排序
-                List<String> lessThanKeys = tagerLessThanKeys(rsVal.getTransactionTime(), supplyWithdrawKeysDesc);
-                lessThanKeys.sort((k1, k2) -> {
-                    Date t1 = parseTimeKey(k1);
-                    Date t2 = parseTimeKey(k2);
-                    return t2.compareTo(t1); // 降序排序
-                });
-
-                // 获取最新的小于目标时间的key
-                String newLessThanTimeStr = tagerNewLessThanKey(rsVal.getTransactionTime(), lessThanKeys);
-                Date timeL = parseTimeKey(newLessThanTimeStr);
-
-                if (timeL != null) {
-//                    String targetStr = new SimpleDateFormat(targetLayout).format(timeL);
-                    String targetStr = DateUtil.dateGroupFormat(isWeek,timeL);
-                    BorrowRateLineVo supplyWithdrawL = dateKeys.get(targetStr);
-
-                    if (supplyWithdrawL == null) {
-                        // 获取大于目标时间的key
-                        String newGreaterThanTimeStr = tagerNewGreaterThanKey(rsVal.getTransactionTime(), supplyWithdrawKeys);
-                        Date timeG = parseTimeKey(newGreaterThanTimeStr);
-                        if (timeG != null) {
-//                            String targetStrG = new SimpleDateFormat(targetLayout).format(timeG);
-                            String targetStrG = DateUtil.dateGroupFormat(isWeek,timeG);
-                            BorrowRateLineVo supplyWithdrawG = dateKeys.get(targetStrG);
-
-                            if (supplyWithdrawG == null) {
-                                log.info("没有大于TransactionTime={}", rsVal.getTransactionTime());
-                            } else {
-                                obj.setTransactionTime(rsVal.getTransactionTime());
-                                obj.setDateUnit(rsVal.getDateUnit());
-                                obj.setAmount(supplyWithdrawG.getAmount());
-                                obj.setTotalAmount(supplyWithdrawG.getTotalAmount());
-                            }
-                        }
-                    } else {
-                        obj.setTransactionTime(rsVal.getTransactionTime());
-                        obj.setDateUnit(rsVal.getDateUnit());
-                        obj.setAmount(supplyWithdrawL.getAmount());
-                        obj.setTotalAmount(supplyWithdrawL.getTotalAmount());
-                    }
-                }
-            } else {
-                obj = val;
-                obj.setTransactionTime(rsVal.getTransactionTime());
-            }
-            resultData.add(obj);
+        for (TimePeriodStatisticsVo resultDatum : resultData) {
+            BorrowRateLineVo vo = new BorrowRateLineVo();
+            vo.setDateUnit(resultDatum.getDateUnit());
+            vo.setTransactionTime(resultDatum.getTransactionTime());
+            vo.setAmount(resultDatum.getVal());
+            vo.setTotalAmount(resultDatum.getTotalVal());
+            data.add(vo);
         }
-        return resultData;
+//        List<String> supplyWithdrawKeysDesc = supplyCollateralTimeStrSortDescLambda(dateKeys); //TransactionTime日期从大到小排序
+//        List<String> supplyWithdrawKeys = supplyWithdrawKeysDesc;
+//        supplyWithdrawKeys.sort((s1,s2)-> s1.compareTo(s2)); //TransactionTime日期从小到大排序
+
+
+//        for (BorrowRateLineVo rsVal : virtualTimePeriodData) {
+//            BorrowRateLineVo obj = new BorrowRateLineVo();
+//            BorrowRateLineVo val = dateKeys.get(rsVal.getDateUnit());
+//
+//            if (val == null) {
+//                // 获取小于目标时间的key列表并降序排序
+//                List<String> lessThanKeys = tagerLessThanKeys(rsVal.getTransactionTime(), supplyWithdrawKeysDesc);
+//                lessThanKeys.sort((k1, k2) -> {
+//                    Date t1 = parseTimeKey(k1);
+//                    Date t2 = parseTimeKey(k2);
+//                    return t2.compareTo(t1); // 降序排序
+//                });
+//
+//                // 获取最新的小于目标时间的key
+//                String newLessThanTimeStr = tagerNewLessThanKey(rsVal.getTransactionTime(), lessThanKeys);
+//                Date timeL = parseTimeKey(newLessThanTimeStr);
+//
+//                if (timeL != null) {
+////                    String targetStr = new SimpleDateFormat(targetLayout).format(timeL);
+//                    String targetStr = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeL);
+//                    BorrowRateLineVo supplyWithdrawL = dateKeys.get(targetStr);
+//
+//                    if (supplyWithdrawL == null) {
+//                        // 获取大于目标时间的key
+//                        String newGreaterThanTimeStr = tagerNewGreaterThanKey(rsVal.getTransactionTime(), supplyWithdrawKeys);
+//                        Date timeG = parseTimeKey(newGreaterThanTimeStr);
+//                        if (timeG != null) {
+////                            String targetStrG = new SimpleDateFormat(targetLayout).format(timeG);
+//                            String targetStrG = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeG);
+//                            BorrowRateLineVo supplyWithdrawG = dateKeys.get(targetStrG);
+//
+//                            if (supplyWithdrawG == null) {
+//                                log.info("没有大于TransactionTime={}", rsVal.getTransactionTime());
+//                            } else {
+//                                obj.setTransactionTime(rsVal.getTransactionTime());
+//                                obj.setDateUnit(rsVal.getDateUnit());
+//                                obj.setAmount(supplyWithdrawG.getAmount());
+//                                obj.setTotalAmount(supplyWithdrawG.getTotalAmount());
+//                            }
+//                        }
+//                    } else {
+//                        obj.setTransactionTime(rsVal.getTransactionTime());
+//                        obj.setDateUnit(rsVal.getDateUnit());
+//                        obj.setAmount(supplyWithdrawL.getAmount());
+//                        obj.setTotalAmount(supplyWithdrawL.getTotalAmount());
+//                    }
+//                }
+//            } else {
+//                obj = val;
+//                obj.setTransactionTime(rsVal.getTransactionTime());
+//            }
+//            resultData.add(obj);
+//        }
+        return data;
     }
 
     // 获取小于目标key的所有key

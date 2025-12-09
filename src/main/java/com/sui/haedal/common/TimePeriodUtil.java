@@ -1,5 +1,7 @@
 package com.sui.haedal.common;
 
+import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
+import com.sui.haedal.model.enums.DecimalType;
 import com.sui.haedal.model.vo.*;
 import lombok.extern.slf4j.Slf4j;
 
@@ -42,6 +44,18 @@ public class TimePeriodUtil {
         vo.setIsWeek(isWeek);
         vo.setMysqlDateFormat(mysqlDateFormat);
         return vo;
+    }
+
+    public static TimePeriodStatisticsBo getTimePeriodParameter(Integer timePeriodType){
+        TimePeriodVo vo = TimePeriodTypeStartAndEndTime(timePeriodType);
+        TimePeriodStatisticsBo statisticsBo = new TimePeriodStatisticsBo();
+        statisticsBo.setStart(Date.from(vo.getStart().atZone(ZoneId.systemDefault()).toInstant()));
+        statisticsBo.setEnd(Date.from(vo.getEnd().atZone(ZoneId.systemDefault()).toInstant()));
+        statisticsBo.setStartLD(vo.getStart());
+        statisticsBo.setEndLD(vo.getEnd());
+        statisticsBo.setMysqlDateFormat(vo.getMysqlDateFormat());
+        statisticsBo.setIsWeek(vo.getIsWeek());
+        return statisticsBo;
     }
 
     public static void virtualTimePeriodMatchValue(List<TimePeriodStatisticsVo> virtualTimePeriodData,Map<String,TimePeriodStatisticsVo> dateKeys,
@@ -180,10 +194,12 @@ public class TimePeriodUtil {
         }
     }
 
-    public static Map<String, TimePeriodStatisticsVo> timePeriodDataConvertDateUnitMaps(List<TimePeriodStatisticsVo> timePeriodData , Map<String, PythCoinFeedPriceVo> coinPrice,
-                                                          List<String> transactionTimes,Map<String, TimePeriodStatisticsVo> dateUnitRemoveMaps){
+    public static Map<String, TimePeriodStatisticsVo> timePeriodDataConvertDateUnitMaps(
+            List<TimePeriodStatisticsVo> timePeriodData ,  List<TimePeriodStatisticsVo> ltStartTimeVos,
+            Map<String, PythCoinFeedPriceVo> coinPrice,List<String> transactionTimes,Map<String, TimePeriodStatisticsVo> dateUnitRemoveMaps){
         Map<String, TimePeriodStatisticsVo> dateUnitMaps = new HashMap<>();
-        BigDecimal cumulativeSum = new BigDecimal(0.00);//累计数量
+//        BigDecimal cumulativeSum = new BigDecimal(0.00);//累计数量
+        BigDecimal cumulativeSum = lessThanStartTimeTotalSumUsd(ltStartTimeVos,coinPrice);//小于开始统计时间usd价格
         for (TimePeriodStatisticsVo statisticsVo : timePeriodData) {
             PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(statisticsVo.getFeedId());
             BigDecimal usdUnitPrice = feedIdUsdUnitPrice(pythCoinFeedPrice);// 计算FeedId对应USD单价
@@ -237,7 +253,7 @@ public class TimePeriodUtil {
         // 计算10的Expo绝对值次方（math.Pow(10, |Expo|)）
         double expoAbs = Math.abs(pythCoinFeedPrice.getExpo());
         double denominator = Math.pow(10, expoAbs);
-        return price.subtract(new BigDecimal(denominator));
+        return price.divide(new BigDecimal(denominator));
     }
 
     /**
@@ -372,5 +388,24 @@ public class TimePeriodUtil {
 
     private static BigDecimal getStrBigDecimal(String val){
         return new BigDecimal(val);
+    }
+
+
+    /**
+     * 获取小于开始统计时间usd价格
+     * @param ltVos
+     * @param coinPrice
+     * @return
+     */
+    public static BigDecimal lessThanStartTimeTotalSumUsd(List<TimePeriodStatisticsVo>  ltVos, Map<String, PythCoinFeedPriceVo> coinPrice){
+        BigDecimal lessThanStartBaseSum = new BigDecimal(0.00);//小于统计开始时间基础总计
+        for (TimePeriodStatisticsVo ltVo : ltVos) {
+            PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(ltVo.getFeedId());
+            BigDecimal usdUnitPrice = TimePeriodUtil.feedIdUsdUnitPrice(pythCoinFeedPrice);// 计算FeedId对应USD单价
+            BigDecimal floatAmountVal = TimePeriodUtil.calculateCoinDecimalFloat(ltVo.getVal(), ltVo.getCoinType());
+            BigDecimal coinUsdAmount = floatAmountVal.multiply(usdUnitPrice);// 计算USD金额并累加
+            lessThanStartBaseSum = lessThanStartBaseSum.add(coinUsdAmount);
+        }
+        return lessThanStartBaseSum;
     }
 }

@@ -81,4 +81,34 @@ public class Vault implements Serializable {
      */
     private Date transactionTime;
 
+    /**
+     * 存入总的数量
+     */
+    private String totalAsset;
+
+    /**
+     * 存入总的份额
+     */
+    private String totalShares;
+
+    /**
+     * 总的闲置数量
+     */
+    private String assetReserve;
+
+    /**
+     * 最大存入数量
+     */
+    private String supplyCap;
+
+    /**
+     * 单次最大存款量
+     */
+    private String maxDeposit;
+
+    /**
+     * 单次最小存款量
+     */
+    private String minDeposit;
+
 }

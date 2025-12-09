@@ -23,6 +23,9 @@ public class TimePeriodStatisticsVo {
     @Schema(description = "vaultId")
     private String vaultId;
 
+    @Schema(description = "marketId")
+    private String marketId;
+
     @Schema(description = "币种")
     private String coinType;
 

@@ -141,8 +141,27 @@ public class VaultVo implements Serializable {
     @Schema(description = "borrow清算借贷价值比")
     private String lltv;
 
-    @Schema(description = "vault总数量")
-    private String vaultTotalAssets;
+    @Schema(description = "最大存入数量")
+    private String supplyCap;
 
+
+    @Schema(description = "存入总的数量")
+    private String totalAsset;
+
+
+    @Schema(description = "存入总的份额")
+    private String totalShares;
+
+
+    @Schema(description = "总的闲置数量")
+    private String assetReserve;
+
+
+    @Schema(description = "单次最大存款量")
+    private String maxDeposit;
+
+
+    @Schema(description = "单次最小存款量")
+    private String minDeposit;
 
 }

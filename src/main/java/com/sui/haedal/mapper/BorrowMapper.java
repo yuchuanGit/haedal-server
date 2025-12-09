@@ -3,10 +3,12 @@ package com.sui.haedal.mapper;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.sui.haedal.model.bo.BorrowTotalBo;
+import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.vo.BorrowRateLineVo;
 import com.sui.haedal.model.vo.RateModelDetailVo;
+import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
 import com.sui.haedal.model.vo.UserTotalCollateralVo;
 import netscape.javascript.JSObject;
 import org.apache.ibatis.annotations.Mapper;
@@ -16,9 +18,13 @@ import java.util.List;
 @Mapper
 public interface BorrowMapper extends BaseMapper<Borrow> {
 
-    List<UserTotalCollateralVo> userCollateralSupply(YourTotalSupplyLineBo bo);
+    List<TimePeriodStatisticsVo> userCollateralSupply(TimePeriodStatisticsBo bo);
 
-    List<UserTotalCollateralVo> userCollateralWithdraw(YourTotalSupplyLineBo bo);
+    List<TimePeriodStatisticsVo> userCollateralSupplyLTTransactionTime(TimePeriodStatisticsBo bo);
+
+    List<TimePeriodStatisticsVo> userCollateralWithdraw(TimePeriodStatisticsBo bo);
+
+    List<TimePeriodStatisticsVo> userCollateralWithdrawLTTransactionTime(TimePeriodStatisticsBo bo);
 
     List<BorrowRateLineVo> queryBorrowDetailLine(YourTotalSupplyLineBo mysqlConditionBo);
 
