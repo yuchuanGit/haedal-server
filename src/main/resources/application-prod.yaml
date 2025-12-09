@@ -3,3 +3,8 @@ spring:
     url: jdbc:mysql://52.74.206.162:3307/haedal_earn_borrow?useUnicode=true&characterEncoding=utf8&useSSL=false
     username: haedalOne
     password: haedalOne!@#
+
+sui-config:
+  htoken:
+    htoken-template: /home/admin/app/sui-file/htoken-template/
+    htoken-replace: /home/admin/app/sui-file/

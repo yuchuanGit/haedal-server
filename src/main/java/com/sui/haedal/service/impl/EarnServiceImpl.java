@@ -2,14 +2,13 @@ package com.sui.haedal.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.sui.haedal.common.BigDecimalUtil;
-import com.sui.haedal.common.DateUtil;
-import com.sui.haedal.common.PythOracleUtil;
-import com.sui.haedal.common.TimePeriodUtil;
+import com.sui.haedal.common.*;
+import com.sui.haedal.config.HTokenConfig;
 import com.sui.haedal.mapper.BorrowMapper;
 import com.sui.haedal.mapper.CoinConfigMapper;
 import com.sui.haedal.mapper.EarnMapper;
 import com.sui.haedal.model.bo.EarnTotalBo;
+import com.sui.haedal.model.bo.HTokenBo;
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.entity.CoinConfig;
 import com.sui.haedal.model.entity.Vault;
@@ -37,6 +36,9 @@ public class EarnServiceImpl implements EarnService {
 
     @Resource
     private CoinConfigMapper coinConfigMapper;
+
+    @Resource
+    private HTokenConfig hTokenConfig;
     /**
      * earn vault列表
      * @return
@@ -175,6 +177,77 @@ public class EarnServiceImpl implements EarnService {
         List<TimePeriodStatisticsVo> data = new ArrayList<>();
 
         return data;
+    }
+
+    @Override
+    public HTokenVo geHTokenInfo(HTokenBo tokenBo){
+        HTokenVo vo = new HTokenVo();
+        setHTokenVo(vo);
+        try {
+//            Map<String, String> replaceMap = new HashMap<>();
+//            replaceMap.put("MODULE_NAME","asset");
+//            replaceMap.put("COIN_TYPE","ASSET");
+//            replaceMap.put("COIN_SYMBOL","hSUI-USDC");
+//            replaceMap.put("COIN_DECIMALS","6");
+//            String htokenReplace = hTokenConfig.getHtokenReplace();
+//            String htokenReplaceFileName = FileCopyRenameUtil.generateUniqueFileName();
+//            FileCopyRenameUtil.copyDirAndRename(hTokenConfig.getHtokenTemplate(), htokenReplace, htokenReplaceFileName);
+//            String htokenReplacePath = htokenReplace+htokenReplaceFileName+"/sources/asset.move";
+//            ResourceFileUtil.replaceFileContent(htokenReplacePath, replaceMap, htokenReplacePath);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return vo;
+    }
+
+    private void setHTokenVo(HTokenVo vo){
+        List<String> modules = new ArrayList<>();
+        List<String> dependencies = new ArrayList<>();
+        List<Integer> digest = new ArrayList<>();
+        modules.add("oRzrCwYAAAAKAQAMAgweAyoiBEwIBVRUB6gBsAEI2AJgBrgDVQqNBAUMkgQoAAYBDAIHAhACEQISAAACAAECBwEAAAIBDAEAAQIDDAEAAQQEAgAFBQcAAAoAAQABCwEEAQACCAYHAQIDDQkBAQwDDg0BAQwEDwoLAAEDAgUDCAQMAggABwgEAAILAwEIAAsCAQgAAQgFAQsBAQkAAQgABwkAAgoCCgIKAgsBAQgFBwgEAgsDAQkACwIBCQABCwIBCAABCQABBggEAQUBCwMBCAACCQAFBUFTU0VUDENvaW5NZXRhZGF0YQZPcHRpb24LVHJlYXN1cnlDYXAJVHhDb250ZXh0A1VybAVhc3NldARjb2luD2NyZWF0ZV9jdXJyZW5jeQtkdW1teV9maWVsZARpbml0BG5vbmUGb3B0aW9uFHB1YmxpY19mcmVlemVfb2JqZWN0D3B1YmxpY190cmFuc2ZlcgZzZW5kZXIIdHJhbnNmZXIKdHhfY29udGV4dAN1cmwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICAQYKAgYFaFVTREMKAg8OSGVhcm4gVVNEIENvaW4KAjQzSGVhcm4gVVNEIENvaW4gLSB5aWVsZC1iZWFyaW5nIFVTREMgcmVwcmVzZW50YXRpb24uAAIBCQEAAAAAAhILAAcABwEHAgcDOAAKATgBDAMMAgsDOAILAgsBLhEFOAMCAA==");
+        dependencies.add("0x0000000000000000000000000000000000000000000000000000000000000001");
+        dependencies.add("0x0000000000000000000000000000000000000000000000000000000000000002");
+        digest.add(148);
+        digest.add(51);
+        digest.add(65);
+        digest.add(136);
+        digest.add(47);
+        digest.add(62);
+        digest.add(158);
+        digest.add(79);
+        digest.add(0);
+        digest.add(44);
+        digest.add(171);
+        digest.add(231);
+        digest.add(77);
+        digest.add(250);
+        digest.add(87);
+        digest.add(216);
+        digest.add(62);
+        digest.add(138);
+        digest.add(54);
+        digest.add(143);
+        digest.add(238);
+        digest.add(148);
+        digest.add(222);
+        digest.add(39);
+        digest.add(14);
+        digest.add(49);
+        digest.add(124);
+        digest.add(118);
+        digest.add(131);
+        digest.add(244);
+        digest.add( 33);
+        digest.add(29);
+        vo.setModules(modules);
+        vo.setDependencies(dependencies);
+        vo.setDigest(digest);
+    }
+
+
+    private boolean isJarEnvironment() {
+        String classPath = this.getClass().getResource("").getPath();
+        return classPath.contains("jar!");
     }
 
     private Map<String,CoinConfig> getCoinConfigMap(){

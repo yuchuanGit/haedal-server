@@ -1,6 +1,8 @@
 package com.sui.haedal.service;
 
 import com.sui.haedal.model.bo.EarnTotalBo;
+import com.sui.haedal.model.bo.HTokenBo;
+import com.sui.haedal.model.vo.HTokenVo;
 import com.sui.haedal.model.vo.StrategyVo;
 import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
 import com.sui.haedal.model.vo.VaultVo;
@@ -49,5 +51,7 @@ public interface EarnService {
      * @return
      */
     List<TimePeriodStatisticsVo> totalAPY(EarnTotalBo bo);
+
+    HTokenVo geHTokenInfo(HTokenBo tokenBo);
 
 }

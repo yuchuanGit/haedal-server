@@ -2,10 +2,8 @@ package com.sui.haedal.rest;
 
 import com.sui.haedal.common.R;
 import com.sui.haedal.model.bo.EarnTotalBo;
-import com.sui.haedal.model.vo.BorrowVo;
-import com.sui.haedal.model.vo.StrategyVo;
-import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
-import com.sui.haedal.model.vo.VaultVo;
+import com.sui.haedal.model.bo.HTokenBo;
+import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.BorrowService;
 import com.sui.haedal.service.EarnService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,6 +62,10 @@ public class EarnRest {
     }
 
 
+    @PostMapping("/geHTokenInfo")
+    public R<HTokenVo> geHTokenInfo(@RequestBody HTokenBo tokenBo){
+        return R.data(service.geHTokenInfo(tokenBo));
+    }
 
 
 }
