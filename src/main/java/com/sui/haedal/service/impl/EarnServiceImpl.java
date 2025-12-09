@@ -206,6 +206,7 @@ public class EarnServiceImpl implements EarnService {
             FileCopyRenameUtil.copyDirAndRename(hTokenConfig.getHtokenTemplate(), htokenReplace, htokenReplaceFileName);
             String htokenReplacePath = htokenReplace+htokenReplaceFileName+"/sources";
             String htokenReplaceFile = htokenReplacePath+"/asset.move";
+            System.out.println("asset文件==="+htokenReplaceFile);
             ResourceFileUtil.replaceFileContent(htokenReplaceFile, replaceMap, htokenReplaceFile);
 
             CommandResult commandResult =  executeSuiMoveBuild(htokenReplacePath,null);

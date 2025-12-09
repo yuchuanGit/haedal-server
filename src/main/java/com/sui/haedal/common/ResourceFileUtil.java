@@ -55,6 +55,7 @@ public class ResourceFileUtil {
      */
     private static String replacePlaceholders(String content, Map<String, String> replaceMap) {
         String result = content;
+        System.out.println("读取模板文件源=="+content);
         for (Map.Entry<String, String> entry : replaceMap.entrySet()) {
             String placeholder = "${" + entry.getKey() + "}";
             result = result.replace(placeholder, entry.getValue());
