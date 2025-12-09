@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data
+@Schema(title = "HTokenBo传输结构", description = "HTokenBo传输结构")
 public class HTokenBo {
 
     @Schema(description = "模块名称")

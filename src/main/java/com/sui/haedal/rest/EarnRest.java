@@ -63,6 +63,7 @@ public class EarnRest {
 
 
     @PostMapping("/geHTokenInfo")
+    @Operation(summary = "geHTokenInfo", description = "geHTokenInfo")
     public R<HTokenVo> geHTokenInfo(@RequestBody HTokenBo tokenBo){
         return R.data(service.geHTokenInfo(tokenBo));
     }
