@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -64,7 +65,7 @@ public class EarnRest {
 
     @PostMapping("/geHTokenInfo")
     @Operation(summary = "geHTokenInfo", description = "geHTokenInfo")
-    public R<HTokenVo> geHTokenInfo(@RequestBody HTokenBo tokenBo){
+    public R<HTokenVo> geHTokenInfo(@RequestBody @Valid HTokenBo tokenBo){
         return R.data(service.geHTokenInfo(tokenBo));
     }
 

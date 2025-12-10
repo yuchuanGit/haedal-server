@@ -190,27 +190,20 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public HTokenVo geHTokenInfo(HTokenBo tokenBo){
         HTokenVo vo = new HTokenVo();
-//        setHTokenVo(vo);
         try {
             Map<String, String> replaceMap = new HashMap<>();
-//            replaceMap.put("MODULE_NAME","asset");
-//            replaceMap.put("COIN_TYPE","ASSET");
-//            replaceMap.put("COIN_SYMBOL","hSUI-USDC");
-//            replaceMap.put("COIN_DECIMALS","6");
             replaceMap.put("MODULE_NAME",tokenBo.getModuleName());
-            replaceMap.put("COIN_TYPE",tokenBo.getCoinType());
+            replaceMap.put("COIN_TYPE",tokenBo.getModuleName().toUpperCase());
             replaceMap.put("COIN_SYMBOL",tokenBo.getCoinSymbol());
             replaceMap.put("COIN_DECIMALS",tokenBo.getCoinDecimals());
+            replaceMap.put("COIN_URL",tokenBo.getCoinUrl());
             String htokenReplace = hTokenConfig.getHtokenReplace();
             String htokenReplaceFileName = FileCopyRenameUtil.generateUniqueFileName();
             FileCopyRenameUtil.copyDirAndRename(hTokenConfig.getHtokenTemplate(), htokenReplace, htokenReplaceFileName);
             String htokenReplacePath = htokenReplace+htokenReplaceFileName+"/sources";
             String htokenReplaceFile = htokenReplacePath+"/asset.move";
-            System.out.println("asset文件==="+htokenReplaceFile);
             ResourceFileUtil.replaceFileContent(htokenReplaceFile, replaceMap, htokenReplaceFile);
-
             CommandResult commandResult =  executeSuiMoveBuild(htokenReplacePath,null);
-            log.info("commandResult=="+JSON.toJSON(commandResult));
             if(commandResult.getExitCode()==0){
                 vo = JSONObject.parseObject(commandResult.getStdout(),HTokenVo.class);
             }else{
@@ -318,55 +311,7 @@ public class EarnServiceImpl implements EarnService {
         public boolean isSuccess() { return exitCode == 0; }
     }
 
-    private void setHTokenVo(HTokenVo vo){
-        List<String> modules = new ArrayList<>();
-        List<String> dependencies = new ArrayList<>();
-        List<Integer> digest = new ArrayList<>();
-        modules.add("oRzrCwYAAAAKAQAMAgweAyoiBEwIBVRUB6gBsAEI2AJgBrgDVQqNBAUMkgQoAAYBDAIHAhACEQISAAACAAECBwEAAAIBDAEAAQIDDAEAAQQEAgAFBQcAAAoAAQABCwEEAQACCAYHAQIDDQkBAQwDDg0BAQwEDwoLAAEDAgUDCAQMAggABwgEAAILAwEIAAsCAQgAAQgFAQsBAQkAAQgABwkAAgoCCgIKAgsBAQgFBwgEAgsDAQkACwIBCQABCwIBCAABCQABBggEAQUBCwMBCAACCQAFBUFTU0VUDENvaW5NZXRhZGF0YQZPcHRpb24LVHJlYXN1cnlDYXAJVHhDb250ZXh0A1VybAVhc3NldARjb2luD2NyZWF0ZV9jdXJyZW5jeQtkdW1teV9maWVsZARpbml0BG5vbmUGb3B0aW9uFHB1YmxpY19mcmVlemVfb2JqZWN0D3B1YmxpY190cmFuc2ZlcgZzZW5kZXIIdHJhbnNmZXIKdHhfY29udGV4dAN1cmwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAICAQYKAgYFaFVTREMKAg8OSGVhcm4gVVNEIENvaW4KAjQzSGVhcm4gVVNEIENvaW4gLSB5aWVsZC1iZWFyaW5nIFVTREMgcmVwcmVzZW50YXRpb24uAAIBCQEAAAAAAhILAAcABwEHAgcDOAAKATgBDAMMAgsDOAILAgsBLhEFOAMCAA==");
-        dependencies.add("0x0000000000000000000000000000000000000000000000000000000000000001");
-        dependencies.add("0x0000000000000000000000000000000000000000000000000000000000000002");
-        digest.add(148);
-        digest.add(51);
-        digest.add(65);
-        digest.add(136);
-        digest.add(47);
-        digest.add(62);
-        digest.add(158);
-        digest.add(79);
-        digest.add(0);
-        digest.add(44);
-        digest.add(171);
-        digest.add(231);
-        digest.add(77);
-        digest.add(250);
-        digest.add(87);
-        digest.add(216);
-        digest.add(62);
-        digest.add(138);
-        digest.add(54);
-        digest.add(143);
-        digest.add(238);
-        digest.add(148);
-        digest.add(222);
-        digest.add(39);
-        digest.add(14);
-        digest.add(49);
-        digest.add(124);
-        digest.add(118);
-        digest.add(131);
-        digest.add(244);
-        digest.add( 33);
-        digest.add(29);
-        vo.setModules(modules);
-        vo.setDependencies(dependencies);
-        vo.setDigest(digest);
-    }
 
-
-    private boolean isJarEnvironment() {
-        String classPath = this.getClass().getResource("").getPath();
-        return classPath.contains("jar!");
-    }
 
     private Map<String,CoinConfig> getCoinConfigMap(){
         List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
