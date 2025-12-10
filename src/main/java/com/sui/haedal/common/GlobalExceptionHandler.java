@@ -33,12 +33,12 @@ public class GlobalExceptionHandler {
     }
 
     // 捕获其他异常（可选）
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Map<String, Object> handleException(Exception e) {
-        Map<String, Object> result = new HashMap<>();
-        result.put("code", 500);
-        result.put("msg", "服务器内部错误：" + e.getMessage());
-        return result;
-    }
+//    @ExceptionHandler(Exception.class)
+//    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+//    public Map<String, Object> handleException(Exception e) {
+//        Map<String, Object> result = new HashMap<>();
+//        result.put("code", 500);
+//        result.put("msg", "服务器内部错误：" + e.getMessage());
+//        return result;
+//    }
 }

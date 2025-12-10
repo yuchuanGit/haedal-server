@@ -168,7 +168,7 @@ public class BorrowServiceImpl implements BorrowService {
         BorrowVo vo = new BorrowVo();
         LambdaQueryWrapper<Borrow>  queryWrapper = Wrappers.<Borrow>query().lambda();
         queryWrapper.eq(Borrow::getMarketId,conditionBo.getMarketId());
-        List<Borrow> list = borrowMapper.selectList(Wrappers.<Borrow>query().lambda());
+        List<Borrow> list = borrowMapper.selectList(queryWrapper);
         if(list.size()>0){
             BeanUtils.copyProperties(list.get(0),vo);
             vo.setLltv(ltvConvPercentage(vo.getLltv()));
@@ -180,19 +180,26 @@ public class BorrowServiceImpl implements BorrowService {
             vo.setLoanCoinDecimals(TimePeriodUtil.getCoinDecimal(loanCoinType));
             List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
             Map<String,CoinConfig> coinConfigMap = coinList.stream().collect(Collectors.toMap(CoinConfig::getCoinType,Function.identity(),(v1,v2)->v1));
-
-
-            CoinConfig collaCoin = coinConfigMap.get(vo.getCollateralTokenType());
-            CoinConfig loanCoin = coinConfigMap.get(vo.getLoanTokenType());
-            vo.setCollateralFeedId(collaCoin.getFeedId());
-            vo.setCollateralFeedObjectId(collaCoin.getFeedObjectId());
-            vo.setLoanFeedId(loanCoin.getFeedId());
-            vo.setLoanFeedObjectId(loanCoin.getFeedObjectId());
+            setBorrowFeed(vo,coinConfigMap);
             //todo
             vo.setLiqPenalty("3%");
 
         }
         return vo;
+    }
+
+    private void setBorrowFeed(BorrowVo vo, Map<String,CoinConfig> coinConfigMap ){
+        CoinConfig collaCoin = coinConfigMap.get(vo.getCollateralTokenType());
+        CoinConfig loanCoin = coinConfigMap.get(vo.getLoanTokenType());
+        if (collaCoin != null) {
+            vo.setCollateralFeedId(collaCoin.getFeedId());
+            vo.setCollateralFeedObjectId(collaCoin.getFeedObjectId());
+        }
+        if (loanCoin != null) {
+            vo.setLoanFeedId(loanCoin.getFeedId());
+            vo.setLoanFeedObjectId(loanCoin.getFeedObjectId());
+        }
+
     }
 
     public String ltvConvPercentage(String val) {
@@ -220,21 +227,12 @@ public class BorrowServiceImpl implements BorrowService {
         for (Borrow borrow : list) {
             BorrowVo vo = new BorrowVo();
             BeanUtils.copyProperties(borrow, vo);
-            CoinConfig collateralCoin = coinConfigMap.get(vo.getCollateralTokenType());
-            CoinConfig loanCoin = coinConfigMap.get(vo.getLoanTokenType());
             String collateralType = TimePeriodUtil.coinTokenTypeVal(vo.getCollateralTokenType());
             String loanType = TimePeriodUtil.coinTokenTypeVal(vo.getLoanTokenType());
             vo.setPair(collateralType + "/" + loanType);
             vo.setCollateralCoinDecimals(TimePeriodUtil.getCoinDecimal(collateralType));
             vo.setLoanCoinDecimals(TimePeriodUtil.getCoinDecimal(loanType));
-            if(collateralCoin!=null){
-                vo.setCollateralFeedId(collateralCoin.getFeedId());
-                vo.setCollateralFeedObjectId(collateralCoin.getFeedObjectId());
-            }
-            if(loanCoin!=null){
-                vo.setLoanFeedId(loanCoin.getFeedId());
-                vo.setLoanFeedObjectId(loanCoin.getFeedObjectId());
-            }
+            setBorrowFeed(vo,coinConfigMap);
             vo.setLltv(ltvConvPercentage(vo.getLltv()));
             vo.setLtv(ltvConvPercentage(vo.getLtv()));
             results.add(vo);
