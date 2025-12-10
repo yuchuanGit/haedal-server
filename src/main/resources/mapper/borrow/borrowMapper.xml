@@ -4,6 +4,105 @@
     <select id="queryVaultAddress" resultType="string">
         SELECT vault_id from vault_set_allocation_cap where market_id=#{marketId}
     </select>
+
+
+    <select id="borrowTimePeriodStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT borrowTotal.*,  cc.coin_type, cc.feed_id FROM
+        ( SELECT
+        DATE_FORMAT( max( transaction_time ), '%Y-%m-%d %H:%i' ) AS transaction_time,
+        DATE_FORMAT( transaction_time, #{mysqlDateFormat}) AS dateUnit,
+        sum( assets ) AS val, market_id, max(loan_token_type ) loan_token_type
+        FROM borrow_detail WHERE transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY
+        dateUnit,market_id
+        ) borrowTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = borrowTotal.loan_token_type
+        ORDER BY borrowTotal.dateUnit;
+    </select>
+
+    <select id="borrowTimePeriodStatisticsLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT
+        borrowTotal.*,
+        cc.coin_type,
+        cc.feed_id
+        FROM
+        (
+        SELECT
+        market_id,sum( assets ) AS val,
+        max(loan_token_type) loan_token_type
+        FROM borrow_detail
+        WHERE  transaction_time &lt;= #{start}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY
+        market_id
+        ) borrowTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = borrowTotal.loan_token_type
+    </select>
+
+
+    <select id="borrowRepayTimePeriodStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT borrowTotal.*,  cc.coin_type, cc.feed_id FROM
+        ( SELECT DATE_FORMAT( max( transaction_time ), '%Y-%m-%d %H:%i' ) AS transaction_time,
+        DATE_FORMAT( transaction_time, #{mysqlDateFormat}) AS dateUnit,
+        sum( assets ) AS val, market_id, max(loan_token_type ) loan_token_type
+        FROM borrow_repay_detail WHERE transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY
+        dateUnit,market_id
+        ) borrowTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = borrowTotal.loan_token_type
+        ORDER BY borrowTotal.dateUnit;
+    </select>
+
+    <select id="borrowRepayTimePeriodStatisticsLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT
+        borrowTotal.*,
+        cc.coin_type,
+        cc.feed_id
+        FROM
+        (
+        SELECT
+        market_id,sum( assets ) AS val,
+        max(loan_token_type) loan_token_type
+        FROM borrow_repay_detail
+        WHERE  transaction_time &lt;= #{start}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY
+        market_id
+        ) borrowTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = borrowTotal.loan_token_type
+
+    </select>
+
     <select id="borrowTimePeriodStatisticsSupplyOrCollateral" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT userMarket.*,cc.coin_type,cc.feed_id from
         (SELECT DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i' ) AS transaction_time,
@@ -48,6 +147,49 @@
         ) userMarket
         LEFT JOIN coin_config cc ON cc.coin_type = userMarket.collateral_token_type
     </select>
+
+    <select id="borrowWithdraw" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT userMarket.*,cc.feed_id  from (
+        SELECT DATE_FORMAT( max( transaction_time ), '%Y-%m-%d %H:%i' ) AS transaction_time,
+        DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,sum( assets ) AS val, market_id,
+        max(collateral_token_type) as coin_type FROM borrow_withdraw
+        WHERE transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY dateUnit, market_id) userMarket
+        LEFT JOIN coin_config cc ON cc.coin_type = userMarket.coin_type ORDER BY userMarket.dateUnit
+    </select>
+
+    <select id="borrowWithdrawLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT
+        userMarket.*,
+        cc.feed_id
+        FROM
+        (
+        SELECT
+        sum( assets ) AS val,market_id,max( collateral_token_type ) AS coin_type
+        FROM borrow_withdraw
+        WHERE transaction_time &lt;= #{start}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY
+        market_id
+        ) userMarket
+        LEFT JOIN coin_config cc ON cc.coin_type = userMarket.coin_type
+    </select>
+
 
     <select id="borrowCollateralWithdraw" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
          SELECT userMarket.*,cc.feed_id  from (

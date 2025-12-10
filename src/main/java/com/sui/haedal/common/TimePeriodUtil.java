@@ -39,8 +39,10 @@ public class TimePeriodUtil {
         TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitDepositMap,dateUnitKeys);
         /**虚拟时间段生成**/
         List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
-        /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
-        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        if(dateUnitKeys.size()>0){
+            /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
+            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        }
         return resultData;
     }
 
