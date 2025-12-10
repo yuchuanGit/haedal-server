@@ -13,9 +13,36 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 public class TimePeriodUtil {
+
+    public static List<TimePeriodStatisticsVo> getTimePeriodData(TimePeriodStatisticsBo statisticsBo,
+                                                                 List<TimePeriodStatisticsVo> inputVos,List<TimePeriodStatisticsVo> lessThanInputVos,
+                                                                 List<TimePeriodStatisticsVo> outVos,List<TimePeriodStatisticsVo> lessThanOutVos){
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
+        List<String> depositTransactionTimes = new ArrayList<>();//存交易时间
+        List<String> withdrawTransactionTimes = new ArrayList<>();//取交易时间
+        Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
+        Map<String,String> feedIds = TimePeriodUtil.getInputAndOutFeedIds(inputVos,outVos);
+        /**存/取币种所有feedId查询Pyth价格**/
+        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
+        /**存/取list转map计算usd**/
+        Map<String, TimePeriodStatisticsVo> dateUnitDepositMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(inputVos,lessThanInputVos,coinPrice,depositTransactionTimes,null);
+        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(outVos,lessThanOutVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
+
+        /**循环存时间点匹配对应取时间点 计算当前剩余数量**/
+        TimePeriodUtil.matchDepositTimeCalculate(dateUnitDepositMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
+        /**循环取时间点匹配对应取时间点 计算当前剩余数量**/
+        TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitDepositMap,dateUnitKeys);
+        /**虚拟时间段生成**/
+        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+        /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
+        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        return resultData;
+    }
 
     public static TimePeriodVo TimePeriodTypeStartAndEndTime(Integer timePeriodType){
         TimePeriodVo vo = new TimePeriodVo();
@@ -194,6 +221,15 @@ public class TimePeriodUtil {
         }
     }
 
+    /**
+     *  时间段数据转map计算usd价格
+     * @param timePeriodData 时间段数据
+     * @param ltStartTimeVos 小于统计开始时间数据
+     * @param coinPrice 币种价格
+     * @param transactionTimes 记录时间段数据 交易时间
+     * @param dateUnitRemoveMaps 记录时间段数据转map(用于匹配移除)
+     * @return 记录时间段数据转map
+     */
     public static Map<String, TimePeriodStatisticsVo> timePeriodDataConvertDateUnitMaps(
             List<TimePeriodStatisticsVo> timePeriodData ,  List<TimePeriodStatisticsVo> ltStartTimeVos,
             Map<String, PythCoinFeedPriceVo> coinPrice,List<String> transactionTimes,Map<String, TimePeriodStatisticsVo> dateUnitRemoveMaps){
@@ -408,4 +444,18 @@ public class TimePeriodUtil {
         }
         return lessThanStartBaseSum;
     }
+
+
+    /**
+     * 获取进账和出账 FeedIds
+     * @param depositVos
+     * @param withdrawVos
+     * @return
+     */
+    public static Map<String,String> getInputAndOutFeedIds( List<TimePeriodStatisticsVo> depositVos,List<TimePeriodStatisticsVo> withdrawVos){
+        Map<String,String> feedIds = depositVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1));
+        feedIds.putAll(withdrawVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1)));
+        return feedIds;
+    }
+
 }

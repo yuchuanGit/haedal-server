@@ -2,15 +2,11 @@ package com.sui.haedal.mapper;
 
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.sui.haedal.model.bo.BorrowTotalBo;
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.vo.BorrowRateLineVo;
-import com.sui.haedal.model.vo.RateModelDetailVo;
 import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
-import com.sui.haedal.model.vo.UserTotalCollateralVo;
-import netscape.javascript.JSObject;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -18,23 +14,49 @@ import java.util.List;
 @Mapper
 public interface BorrowMapper extends BaseMapper<Borrow> {
 
-    List<TimePeriodStatisticsVo> userCollateralSupply(TimePeriodStatisticsBo bo);
+    /**
+     * 查询marketId对应Vault地址
+     * @param marketId
+     * @return
+     */
+    List<String> queryVaultAddress(String marketId);
 
-    List<TimePeriodStatisticsVo> userCollateralSupplyLTTransactionTime(TimePeriodStatisticsBo bo);
+    /**
+     * borrow时间段统计 存资产/存抵押
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> borrowTimePeriodStatisticsSupplyOrCollateral(TimePeriodStatisticsBo bo);
 
-    List<TimePeriodStatisticsVo> userCollateralWithdraw(TimePeriodStatisticsBo bo);
+    /**
+     *  borrow时间段统计小于TransactionTime 存资产/存抵押
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(TimePeriodStatisticsBo bo);
 
-    List<TimePeriodStatisticsVo> userCollateralWithdrawLTTransactionTime(TimePeriodStatisticsBo bo);
+    /**
+     *  borrow时间段统计 取抵押
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> borrowCollateralWithdraw(TimePeriodStatisticsBo bo);
+
+    /**
+     *  borrow时间段统计小于TransactionTime 取抵押
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> borrowCollateralWithdrawLTTransactionTime(TimePeriodStatisticsBo bo);
 
     List<BorrowRateLineVo> queryBorrowDetailLine(YourTotalSupplyLineBo mysqlConditionBo);
 
-    List<BorrowRateLineVo> queryBorrowDetailRateLine(YourTotalSupplyLineBo mysqlConditionBo);
-
-    List<JSONObject> queryRateDateGroup(YourTotalSupplyLineBo mysqlConditionBo);
-
-    List<JSONObject> dateGroupSupplyAssets(YourTotalSupplyLineBo mysqlConditionBo);
-
-    List<JSONObject> dateGroupBorrowAssets(YourTotalSupplyLineBo mysqlConditionBo);
+    /**
+     * borrow 详情借利率统计每天最新利率
+     * @param statisticsBo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> queryBorrowDetailRateLine(TimePeriodStatisticsBo statisticsBo);
 
     /**
      * 池子当前利用率 = 总借款/总供应
@@ -42,4 +64,17 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
      * @return
      */
     String marketCurrentU(YourTotalSupplyLineBo mysqlConditionBo);
+
+
+    /**
+     * 利率模型
+     * @param mysqlConditionBo
+     * @return
+     */
+    List<JSONObject> queryRateDateGroup(YourTotalSupplyLineBo mysqlConditionBo);
+
+    List<JSONObject> dateGroupSupplyAssets(YourTotalSupplyLineBo mysqlConditionBo);
+
+    List<JSONObject> dateGroupBorrowAssets(YourTotalSupplyLineBo mysqlConditionBo);
+
 }

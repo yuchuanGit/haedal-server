@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 
 @Data
 @TableName("borrow")
@@ -173,5 +175,7 @@ public class BorrowVo implements Serializable {
     @JsonProperty("LiqPenalty")
     private String liqPenalty;//清算者优惠比例
 
+    @Schema(description = "borrow对应vaultAddress")
+    private List<String> vaultAddress;
 
 }

@@ -24,6 +24,12 @@ public class TimePeriodStatisticsBo {
     @Schema(description = "按业务id统计(earn vaultId/borrow marketId)")
     private String businessPoolId;
 
+    @Schema(description = "存入类型 1 supply存入 2 collateral存入",hidden = true)
+    private Integer supplyType;
+
+    @Schema(description = "统计 角色 true 用户 false borrow池",hidden = true)
+    private Boolean statisticalRole;
+
     /**
      * 是否按周
      */

@@ -1,7 +1,5 @@
 package com.sui.haedal.service.impl;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -15,15 +13,11 @@ import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
+import com.sui.haedal.model.enums.HaedalOperationType;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.BorrowService;
 import lombok.extern.slf4j.Slf4j;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -123,14 +117,45 @@ public class BorrowServiceImpl implements BorrowService {
         return vo;
     }
 
+    /**
+     * borrow 详情借利率统计
+     * @param conditionBo
+     * @return
+     */
     @Override
-    public List<BorrowRateLineVo> queryBorrowDetailRateLine(BorrowTotalBo conditionBo){
-        YourTotalSupplyLineBo mysqlConditionBo = borrowTotalConditionBo(conditionBo);
-        return borrowMapper.queryBorrowDetailRateLine(mysqlConditionBo);
+    public List<TimePeriodStatisticsVo> borrowDetailRateStatistics(BorrowTotalBo conditionBo){
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        /**获取时间段类型 时间段数据**/
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType());
+        statisticsBo.setBusinessPoolId(conditionBo.getMarketId());
+        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+        List<TimePeriodStatisticsVo> list = borrowMapper.queryBorrowDetailRateLine(statisticsBo);
+        Map<String,TimePeriodStatisticsVo> dateUnitKeys = list.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)-> v1));
+        /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
+        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        return resultData;
+
+    }
+
+    /**
+     * borrow 详情抵押品利率
+     * @param conditionBo
+     * @return
+     */
+    @Override
+    public  List<TimePeriodStatisticsVo> borrowDetailCollateralAPRStatistics(BorrowTotalBo conditionBo){
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        return resultData;
     }
     @Override
     public List<BorrowRateLineVo> queryBorrowDetailLine(BorrowTotalBo conditionBo){
         YourTotalSupplyLineBo mysqlConditionBo = borrowTotalConditionBo(conditionBo);
+        List<String> rateTypes = new ArrayList<>();
+        if(HaedalOperationType.Collateral.getValue().equals(conditionBo.getStatisticsType())){
+
+        }else if(HaedalOperationType.BORROW.getValue().equals(conditionBo.getStatisticsType())){
+
+        }
         List<BorrowRateLineVo> data = borrowMapper.queryBorrowDetailLine(mysqlConditionBo);
         return data;
     }
@@ -183,10 +208,64 @@ public class BorrowServiceImpl implements BorrowService {
             setBorrowFeed(vo,coinConfigMap);
             //todo
             vo.setLiqPenalty("3%");
+            vo.setVaultAddress(borrowMapper.queryVaultAddress(vo.getMarketId()));
 
         }
         return vo;
     }
+
+
+    /**
+     * borrow 资产存入统计
+     * @param bo
+     * @return
+     */
+    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailSupplyStatistics(BorrowTotalBo bo){
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        /**获取时间段类型 时间段数据**/
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        statisticsBo.setBusinessPoolId(bo.getMarketId());
+        statisticsBo.setSupplyType(HaedalOperationType.SUPPLY.getValue());
+        statisticsBo.setStatisticalRole(false);//borrow池 统计
+
+        List<TimePeriodStatisticsVo> supplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
+        List<TimePeriodStatisticsVo> supplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
+        //todo 查询取数据
+//        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,collateralSupplyVos,collateralSupplyLtVos,collateralWithdrawVos,collateralWithdrawLtVos);
+        return resultData;
+    }
+
+    /**
+     * borrow 资产存入抵押品统计
+     * @param bo
+     * @return
+     */
+    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailCollateralStatistics(BorrowTotalBo bo){
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        statisticsBo.setBusinessPoolId(bo.getMarketId());
+        statisticsBo.setSupplyType(HaedalOperationType.Collateral.getValue());
+        statisticsBo.setStatisticalRole(false);//borrow池 统计
+        List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.borrowCollateralWithdraw(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralWithdrawLtVos =borrowMapper.borrowCollateralWithdrawLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,collateralSupplyVos,collateralSupplyLtVos,collateralWithdrawVos,collateralWithdrawLtVos);
+        return resultData;
+    }
+
+    /**
+     * borrow 借明细统计
+     * @param bo
+     * @return
+     */
+    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailStatistics(BorrowTotalBo bo){
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        return resultData;
+    }
+
 
     private void setBorrowFeed(BorrowVo vo, Map<String,CoinConfig> coinConfigMap ){
         CoinConfig collaCoin = coinConfigMap.get(vo.getCollateralTokenType());
@@ -394,10 +473,12 @@ public class BorrowServiceImpl implements BorrowService {
 //        Map<String,BorrowRateLineVo>  dateKeys = new HashMap<>();
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType());
         statisticsBo.setUserAddress(conditionBo.getUserAddress());
-        List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.userCollateralSupply(statisticsBo);
-        List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.userCollateralSupplyLTTransactionTime(statisticsBo);
-        List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.userCollateralWithdraw(statisticsBo);
-        List<TimePeriodStatisticsVo> collateralWithdrawLtVos =borrowMapper.userCollateralWithdrawLTTransactionTime(statisticsBo);
+        statisticsBo.setSupplyType(HaedalOperationType.SUPPLY.getValue());
+        statisticsBo.setStatisticalRole(true);//用户统计
+        List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.borrowCollateralWithdraw(statisticsBo);
+        List<TimePeriodStatisticsVo> collateralWithdrawLtVos =borrowMapper.borrowCollateralWithdrawLTTransactionTime(statisticsBo);
         Map<String,String> feedIds = collateralSupplyVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1));
         feedIds.putAll(collateralWithdrawVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1)));
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);

@@ -142,8 +142,7 @@ public class EarnServiceImpl implements EarnService {
         /**根据时间段查询存/取数据**/
         List<TimePeriodStatisticsVo> userDepositVos = earnMapper.userDeposit(statisticsBo);
         List<TimePeriodStatisticsVo> userWithdrawVos = earnMapper.userWithdraw(statisticsBo);
-        Map<String,String> feedIds = userDepositVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1));
-        feedIds.putAll(userWithdrawVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1)));
+        Map<String,String> feedIds = TimePeriodUtil.getInputAndOutFeedIds(userDepositVos,userWithdrawVos);
         /**存/取币种所有feedId查询Pyth价格**/
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
         Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
