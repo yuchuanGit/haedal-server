@@ -2,8 +2,8 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sui.haedal.mapper.EarnMapper">
     <select id="vaultStrategy" resultType="com.sui.haedal.model.vo.StrategyVo">
-       SELECT vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps,rd.borrow_rate apy from vault_borrow_cap vbc
-        INNER JOIN (select MAX(timestamp_ms) lastTime from vault_borrow_cap where vault_id=#{vaultId} GROUP BY vault_id,market_id) lastvbc
+       SELECT vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps,rd.borrow_rate apy from vault_set_allocation_cap vbc
+        INNER JOIN (select MAX(timestamp_ms) lastTime from vault_set_allocation_cap where vault_id=#{vaultId} GROUP BY vault_id,market_id) lastvbc
         on lastvbc.lastTime=vbc.timestamp_ms
         left join borrow b on b.market_id=vbc.market_id
         left join rate_detail rd on rd.market_id=vbc.market_id and rd.rate_type='supply'
@@ -11,7 +11,7 @@
 
     <select id="vaultDetail" resultType="com.sui.haedal.model.vo.VaultVo">
         SELECT v.*,b.collateral_token_type,b.lltv from vault v
-        left join vault_borrow_cap vbc on vbc.vault_id=v.vault_id
+        left join vault_set_allocation_cap vbc on vbc.vault_id=v.vault_id
         left join borrow b on b.market_id=vbc.market_id
         where v.vault_id=#{vaultId}
     </select>
