@@ -111,12 +111,14 @@ public class EarnServiceImpl implements EarnService {
         BigDecimal precision = decimalPower(16);
         BigDecimal baseVal = new BigDecimal(0.01);
         for (StrategyVo vo : data) {
-            BigDecimal supplyRate = new BigDecimal(vo.getApy()).divide(precision);
-            String apy = TimePeriodUtil.roundingModeStr(supplyRate, 2,RoundingMode.UP);
-            if(supplyRate.compareTo(baseVal)<0){
-                apy = "<0.01";
+            if(vo.getApy()!=null && vo.getApy()!=""){
+                BigDecimal supplyRate = new BigDecimal(vo.getApy()).divide(precision);
+                String apy = TimePeriodUtil.roundingModeStr(supplyRate, 2,RoundingMode.UP);
+                if(supplyRate.compareTo(baseVal)<0){
+                    apy = "<0.01";
+                }
+                vo.setApy(apy+"%");
             }
-            vo.setApy(apy+"%");
         }
         return data;
     }

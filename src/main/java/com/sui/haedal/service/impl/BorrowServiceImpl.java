@@ -132,7 +132,9 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> list = borrowMapper.queryBorrowDetailRateLine(statisticsBo);
         Map<String,TimePeriodStatisticsVo> dateUnitKeys = list.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)-> v1));
         /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
-        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        if(dateUnitKeys.size()>0){
+            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        }
         return resultData;
 
     }
