@@ -62,6 +62,20 @@ public class EarnRest {
         return R.data(service.totalAPY(bo));
     }
 
+    @PostMapping("/yieldEarned")
+    @Operation(summary = "vault统计获得收益", description = "vault统计获得收益")
+    public R<TimePeriodStatisticsGrowthVo> yieldEarned(@RequestBody EarnTotalBo bo) {
+        return R.data(service.yieldEarned(bo));
+    }
+
+
+    @PostMapping("/vaultSharePrice")
+    @Operation(summary = "vault统计份额价格", description = "vault统计份额价格")
+    public R<TimePeriodStatisticsGrowthVo> vaultSharePrice(@RequestBody EarnTotalBo bo) {
+        return R.data(service.vaultSharePrice(bo));
+    }
+
+
 
     @PostMapping("/geHTokenInfo")
     @Operation(summary = "geHTokenInfo", description = "geHTokenInfo")

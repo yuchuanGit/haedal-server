@@ -20,6 +20,8 @@ public interface EarnMapper extends BaseMapper<Vault> {
      */
     List<StrategyVo> vaultStrategy(String vaultId);
 
+    List<StrategyVo> allVaultStrategy();
+
     /**
      * Vault和borrow关联详情
      * @param vaultId
@@ -29,16 +31,44 @@ public interface EarnMapper extends BaseMapper<Vault> {
 
 
     /**
-     * earn 统计用户时间段存入数量
+     * earn 统计vault时间段存入数量
      * @param bo
      * @return
      */
-    List<TimePeriodStatisticsVo>  userDeposit(TimePeriodStatisticsBo bo);
+    List<TimePeriodStatisticsVo>  vaultDeposit(TimePeriodStatisticsBo bo);
 
     /**
-     * earn 统计用户时间段取出数量
+     * earn 统计vault时间段小于TransactionTime存入数量
      * @param bo
      * @return
      */
-    List<TimePeriodStatisticsVo>  userWithdraw(TimePeriodStatisticsBo bo);
+    List<TimePeriodStatisticsVo>  vaultDepositLTTransactionTime(TimePeriodStatisticsBo bo);
+
+    /**
+     * earn 统计vault时间段取出数量
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo>  vaultWithdraw(TimePeriodStatisticsBo bo);
+
+    /**
+     *  earn 统计vault时间段小于TransactionTime取出数量
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo>  vaultWithdrawLTTransactionTime(TimePeriodStatisticsBo bo);
+
+    /**
+     * earn 统计vault时间段APY
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> vaultAPYStatistics(TimePeriodStatisticsBo bo);
+
+    /**
+     * earn 统计vault小于TransactionTime 份额价格
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> vaultSharePriceLTTransactionTime(TimePeriodStatisticsBo bo);
 }

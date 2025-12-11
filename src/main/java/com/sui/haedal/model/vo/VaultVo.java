@@ -6,6 +6,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * vaultVo
@@ -163,5 +164,17 @@ public class VaultVo implements Serializable {
 
     @Schema(description = "单次最小存款量")
     private String minDeposit;
+
+    @Schema(description = "vault最新价格")
+    private String vaultSharePrice;
+
+    @Schema(description = "vault最新价格增长")
+    private String vaultSharePriceGrowth;
+
+    @Schema(description = "vault最新收益")
+    private String yieldEarned;
+
+    @Schema(description = "分配不同borrow策略")
+    private List<StrategyVo> strategyVos;
 
 }

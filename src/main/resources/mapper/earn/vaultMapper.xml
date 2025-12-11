@@ -3,10 +3,16 @@
 <mapper namespace="com.sui.haedal.mapper.EarnMapper">
     <select id="vaultStrategy" resultType="com.sui.haedal.model.vo.StrategyVo">
        SELECT vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps,rd.borrow_rate apy from vault_set_allocation_cap vbc
-        INNER JOIN (select MAX(timestamp_ms) lastTime from vault_set_allocation_cap where vault_id=#{vaultId} GROUP BY vault_id,market_id) lastvbc
-        on lastvbc.lastTime=vbc.timestamp_ms
+        INNER JOIN (select MAX(id) lastId from vault_set_allocation_cap where vault_id=#{vaultId} GROUP BY vault_id,market_id) lastvbc
+        on lastvbc.lastId=vbc.id
         left join borrow b on b.market_id=vbc.market_id
-        left join rate_detail rd on rd.market_id=vbc.market_id and rd.rate_type='supply'
+        left join (SELECT market_id,max(transaction_time) transaction_time,ANY_VALUE(borrow_rate) borrow_rate from rate_detail GROUP BY market_id) rd on rd.market_id=vbc.market_id
+    </select>
+
+    <select id="allVaultStrategy" resultType="com.sui.haedal.model.vo.StrategyVo">
+        SELECT b.market_id,vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps from vault_set_allocation_cap vbc
+        INNER JOIN (select MAX(id) lastId from vault_set_allocation_cap  GROUP BY vault_id,market_id) lastvbc on lastvbc.lastId=vbc.id
+        left join borrow b on b.market_id=vbc.market_id
     </select>
 
     <select id="vaultDetail" resultType="com.sui.haedal.model.vo.VaultVo">
@@ -16,9 +22,9 @@
         where v.vault_id=#{vaultId}
     </select>
 
-    <select id="userDeposit" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+    <select id="vaultDeposit" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT
-        userMarket.*,
+        vaultDepositTotal.*,
         cc.feed_id
         FROM
         (
@@ -30,22 +36,50 @@
         max(asset_type) coin_type
         FROM
         vault_deposit
-        WHERE
-        user = #{userAddress}
-        AND timestamp_ms &gt;= #{start}
-        AND timestamp_ms &lt;= #{end}
+        WHERE  timestamp_ms &gt;= #{start} AND timestamp_ms &lt;= #{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND user = #{userAddress}
+            </when>
+            <otherwise>
+                AND vault_id =#{businessPoolId}
+            </otherwise>
+        </choose>
         GROUP BY
         dateUnit,
         vault_id
-        ) userMarket
-        LEFT JOIN coin_config cc ON cc.coin_type = userMarket.coin_type
+        ) vaultDepositTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = vaultDepositTotal.coin_type
         ORDER BY
-        userMarket.dateUnit
+        vaultDepositTotal.dateUnit
     </select>
 
-    <select id="userWithdraw" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+    <select id="vaultDepositLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT
-        userMarket.*,
+        vaultDepositTotal.*,
+        cc.feed_id
+        FROM
+        (
+        SELECT
+        vault_id,sum(asset_amount) AS val,max(asset_type) coin_type
+        FROM vault_deposit
+        WHERE  timestamp_ms &lt;= #{start}
+        <choose>
+            <when test="statisticalRole==true">
+                AND user = #{userAddress}
+            </when>
+            <otherwise>
+                AND vault_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY vault_id
+        ) vaultDepositTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = vaultDepositTotal.coin_type
+    </select>
+
+    <select id="vaultWithdraw" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT
+        vaultWithdrawTotal.*,
         cc.feed_id
         FROM
         (
@@ -57,17 +91,63 @@
         max( asset_type) AS coin_type
         FROM
         vault_withdraw
-        WHERE
-         user = #{userAddress}
-        AND timestamp_ms &gt;= #{start}
-        AND timestamp_ms &lt;= #{end}
-        GROUP BY
-        dateUnit,
-        vault_id
-        ) userMarket
-        LEFT JOIN coin_config cc ON cc.coin_type = userMarket.coin_type
+        WHERE   timestamp_ms &gt;= #{start} AND timestamp_ms &lt;= #{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND user = #{userAddress}
+            </when>
+            <otherwise>
+                AND vault_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY dateUnit,vault_id
+        ) vaultWithdrawTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = vaultWithdrawTotal.coin_type
         ORDER BY
-        userMarket.dateUnit
+        vaultWithdrawTotal.dateUnit
+    </select>
+
+    <select id="vaultWithdrawLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT
+        vaultWithdrawTotal.*,
+        cc.feed_id
+        FROM
+        (
+        SELECT
+        vault_id,sum(asset_amount) AS val,max(asset_type) AS coin_type
+        FROM vault_withdraw
+        WHERE  timestamp_ms &lt;= #{start}
+        <choose>
+            <when test="statisticalRole==true">
+                AND user = #{userAddress}
+            </when>
+            <otherwise>
+                AND vault_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        GROUP BY vault_id
+        ) vaultWithdrawTotal
+        LEFT JOIN coin_config cc ON cc.coin_type = vaultWithdrawTotal.coin_type
+    </select>
+
+    <select id="vaultAPYStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT
+        DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i' ) AS transaction_time,
+        DATE_FORMAT(transaction_time, #{mysqlDateFormat}) AS dateUnit,
+        max(apy) AS val
+        FROM vault_apy
+        WHERE  transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
+        GROUP BY dateUnit
+    </select>
+
+    <select id="vaultSharePriceLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+         SELECT
+        DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i') AS transaction_time,
+        DATE_FORMAT(transaction_time, '%Y-%m-%d') AS dateUnit,
+        sum(exchange_rate) AS val
+        FROM vault_exchange_rate
+        WHERE  transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
+        GROUP BY dateUnit
     </select>
 
 </mapper>

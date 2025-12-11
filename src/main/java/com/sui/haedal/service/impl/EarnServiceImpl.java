@@ -16,6 +16,7 @@ import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.entity.CoinConfig;
 import com.sui.haedal.model.entity.Vault;
 import com.sui.haedal.model.enums.DecimalType;
+import com.sui.haedal.model.enums.HaedalOperationType;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.EarnService;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,8 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
@@ -55,6 +58,8 @@ public class EarnServiceImpl implements EarnService {
     public List<VaultVo> list(){
         List<VaultVo> vos = new ArrayList<>();
         List<Vault> list = earnMapper.selectList(Wrappers.<Vault>query().lambda());
+        List<StrategyVo> strategyVos = earnMapper.allVaultStrategy();
+        Map<String,List<StrategyVo>> vaultMaps = strategyVos.stream().collect(Collectors.groupingBy(StrategyVo::getVaultId));
         Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
         for (Vault vault : list) {
             VaultVo vo = new VaultVo();
@@ -69,6 +74,7 @@ public class EarnServiceImpl implements EarnService {
                 vo.setAssetTypeFeedId(coinConfig.getFeedId());
                 vo.setAssetTypeFeedObjectId(coinConfig.getFeedObjectId());
             }
+            vo.setStrategyVos(vaultMaps.get(vo.getVaultId()));
             vos.add(vo);
         }
         return vos;
@@ -96,6 +102,10 @@ public class EarnServiceImpl implements EarnService {
             BigDecimal tvlCapacity = BigDecimalUtil.calculate(DecimalType.SUBTRACT.getValue(),new BigDecimal(vaultVo.getSupplyCap()),
                     new BigDecimal(vaultVo.getTotalAsset()),0,RoundingMode.DOWN);
             vaultVo.setTvlCapacity(tvlCapacity.toString());//该池子总存款-剩余容量
+            //todo  vaultSharePrice/yieldEarned
+            vaultVo.setVaultSharePrice("300");
+            vaultVo.setVaultSharePriceGrowth("10%");
+            vaultVo.setYieldEarned("1.8");
         }
         return vaultVo;
     }
@@ -133,32 +143,43 @@ public class EarnServiceImpl implements EarnService {
      */
     @Override
     public List<TimePeriodStatisticsVo> yourDepositsWithdraw(EarnTotalBo bo){
-        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
-        Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
-        List<String> depositTransactionTimes = new ArrayList<>();//存交易时间
-        List<String> withdrawTransactionTimes = new ArrayList<>();//取交易时间
+//        /*List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+//        Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
+//        List<String> depositTransactionTimes = new ArrayList<>();//存交易时间
+//        List<String> withdrawTransactionTimes = new ArrayList<>();//取交易时间
+//        *//**获取时间段类型 时间段数据**//*
+//        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+//        statisticsBo.setBusinessPoolId(bo.getVaultId());
+//        statisticsBo.setUserAddress(bo.getUserAddress());
+//        *//**根据时间段查询存/取数据**//*
+//        List<TimePeriodStatisticsVo> userDepositVos = earnMapper.userDeposit(statisticsBo);
+//        List<TimePeriodStatisticsVo> userWithdrawVos = earnMapper.userWithdraw(statisticsBo);
+//        Map<String,String> feedIds = TimePeriodUtil.getInputAndOutFeedIds(userDepositVos,userWithdrawVos);
+//        *//**存/取币种所有feedId查询Pyth价格**//*
+//        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
+//        Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
+//        *//**存/取list转map计算usd**//*
+//        Map<String, TimePeriodStatisticsVo> dateUnitDepositMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(userDepositVos,new ArrayList<>(),coinPrice,depositTransactionTimes,null);
+//        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(userWithdrawVos,new ArrayList<>(),coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
+//        *//**循环存时间点匹配对应取时间点 计算当前剩余数量**//*
+//        TimePeriodUtil.matchDepositTimeCalculate(dateUnitDepositMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
+//        *//**循环取时间点匹配对应取时间点 计算当前剩余数量**//*
+//        TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitDepositMap,dateUnitKeys);
+//        *//**虚拟时间段生成**//*
+//        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+//        *//**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**//*
+//        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimeP*/eriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+
         /**获取时间段类型 时间段数据**/
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
-        statisticsBo.setBusinessPoolId(bo.getVaultId());
         statisticsBo.setUserAddress(bo.getUserAddress());
+        statisticsBo.setStatisticalRole(true);//用户查询
         /**根据时间段查询存/取数据**/
-        List<TimePeriodStatisticsVo> userDepositVos = earnMapper.userDeposit(statisticsBo);
-        List<TimePeriodStatisticsVo> userWithdrawVos = earnMapper.userWithdraw(statisticsBo);
-        Map<String,String> feedIds = TimePeriodUtil.getInputAndOutFeedIds(userDepositVos,userWithdrawVos);
-        /**存/取币种所有feedId查询Pyth价格**/
-        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
-        Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
-        /**存/取list转map计算usd**/
-        Map<String, TimePeriodStatisticsVo> dateUnitDepositMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(userDepositVos,new ArrayList<>(),coinPrice,depositTransactionTimes,null);
-        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(userWithdrawVos,new ArrayList<>(),coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
-        /**循环存时间点匹配对应取时间点 计算当前剩余数量**/
-        TimePeriodUtil.matchDepositTimeCalculate(dateUnitDepositMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
-        /**循环取时间点匹配对应取时间点 计算当前剩余数量**/
-        TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitDepositMap,dateUnitKeys);
-        /**虚拟时间段生成**/
-        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
-        /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
-        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        List<TimePeriodStatisticsVo> depositVos = earnMapper.vaultDeposit(statisticsBo);
+        List<TimePeriodStatisticsVo> depositLtVos = earnMapper.vaultDepositLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> withdrawVos = earnMapper.vaultWithdraw(statisticsBo);
+        List<TimePeriodStatisticsVo> withdrawLtVos = earnMapper.vaultWithdrawLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos);
         return resultData;
     }
 
@@ -170,9 +191,17 @@ public class EarnServiceImpl implements EarnService {
      */
     @Override
     public List<TimePeriodStatisticsVo> totalDeposits(EarnTotalBo bo){
-        List<TimePeriodStatisticsVo> data = new ArrayList<>();
-
-        return data;
+        /**获取时间段类型 时间段数据**/
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        statisticsBo.setBusinessPoolId(bo.getVaultId());
+        statisticsBo.setStatisticalRole(false);//vault池子查询
+        /**根据时间段查询存/取数据**/
+        List<TimePeriodStatisticsVo> depositVos = earnMapper.vaultDeposit(statisticsBo);
+        List<TimePeriodStatisticsVo> depositLtVos = earnMapper.vaultDepositLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> withdrawVos = earnMapper.vaultWithdraw(statisticsBo);
+        List<TimePeriodStatisticsVo> withdrawLtVos = earnMapper.vaultWithdrawLTTransactionTime(statisticsBo);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos);
+        return resultData;
     }
 
 
@@ -183,10 +212,86 @@ public class EarnServiceImpl implements EarnService {
      */
     @Override
     public List<TimePeriodStatisticsVo> totalAPY(EarnTotalBo bo){
-        List<TimePeriodStatisticsVo> data = new ArrayList<>();
-
-        return data;
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        statisticsBo.setBusinessPoolId(bo.getVaultId());
+        List<TimePeriodStatisticsVo> aprVos = earnMapper.vaultAPYStatistics(statisticsBo);
+        if(aprVos.size()>0){
+            Map<String,TimePeriodStatisticsVo> dateUnitKeys = aprVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)-> v1));
+            List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+            /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(apr数据)**/
+            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+        }
+        return resultData;
     }
+
+    /**
+     * vault统计获得收益
+     * @param bo
+     * @return
+     */
+    @Override
+    public TimePeriodStatisticsGrowthVo yieldEarned(EarnTotalBo bo){
+        TimePeriodStatisticsGrowthVo vo = new TimePeriodStatisticsGrowthVo();
+        //todo
+
+        return vo;
+    }
+
+    /**
+     * vault统计份额价格
+     * @param bo
+     * @return
+     */
+    @Override
+    public TimePeriodStatisticsGrowthVo vaultSharePrice(EarnTotalBo bo){
+        TimePeriodStatisticsGrowthVo vo = new TimePeriodStatisticsGrowthVo();
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(1);
+        statisticsBo.setBusinessPoolId(bo.getVaultId());
+        List<TimePeriodStatisticsVo> sharePriceVos = earnMapper.vaultSharePriceLTTransactionTime(statisticsBo);
+        List<GrowthStatisticsVo> growthData = new ArrayList<>();
+        List<Integer> dayGrowths = dayGrowthRules();
+        if(sharePriceVos.size()>0){
+            Map<String,TimePeriodStatisticsVo> dateUnitKeys = sharePriceVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)->v1));
+            LocalDateTime now = LocalDateTime.now();
+            String thatDayKey = DateUtil.dateFormat(new Date(),DateUtil.DATE_FORMAT_YMD);//当天日期
+            TimePeriodStatisticsVo thatDayVo = dateUnitKeys.get(thatDayKey);
+            for(int i=0;i<dayGrowths.size();i++){
+                LocalDateTime fewDaysAgo = now.minusDays(dayGrowths.get(i)).with(LocalTime.of(23, 59, 59, 999_000_000));//几天前
+                if(dayGrowths.get(i)>1){
+                    fewDaysAgo = fewDaysAgo.plusNanos(1000 * 1000000);
+                }
+                Date fewDaysAgoDate = Date.from(fewDaysAgo.atZone(ZoneId.systemDefault()).toInstant());
+                String fewDaysAgoKey = DateUtil.dateFormat(fewDaysAgoDate,DateUtil.DATE_FORMAT_YMD);//前几天日期
+                TimePeriodStatisticsVo fewDaysAgoVo = dateUnitKeys.get(fewDaysAgoKey);
+                if(thatDayVo!=null&&fewDaysAgoVo!=null){
+                    GrowthStatisticsVo growthStatisticsVo = new GrowthStatisticsVo();
+                    BigDecimal thatDayB= new BigDecimal(thatDayVo.getVal());
+                    BigDecimal fewDaysAgoB= new BigDecimal(fewDaysAgoVo.getVal());
+                    /**dayGrowth=(thatDayB-fewDaysAgoB)/fewDaysAgoB*100**/
+                    BigDecimal calculateVal = BigDecimalUtil.calculate(DecimalType.DIVIDE.getValue(),
+                            thatDayB.subtract(fewDaysAgoB),fewDaysAgoB,4,RoundingMode.UP).multiply(new BigDecimal(100));
+                    growthStatisticsVo.setGrowthDay(dayGrowths.get(i));
+                    growthStatisticsVo.setGrowthRate(calculateVal.toString()+"%");
+                    growthData.add(growthStatisticsVo);
+                }else {
+                    break;
+                }
+            }
+        }
+        vo.setStatisticsData(sharePriceVos);
+        vo.setGrowthData(growthData);
+        return vo;
+    }
+    private List<Integer> dayGrowthRules(){
+        List<Integer> dayGrowths = new ArrayList<>();
+        dayGrowths.add(1);
+        dayGrowths.add(7);
+        dayGrowths.add(60);
+        dayGrowths.add(180);
+        return dayGrowths;
+    }
+
 
     @Override
     public HTokenVo geHTokenInfo(HTokenBo tokenBo){
