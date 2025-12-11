@@ -482,7 +482,7 @@ public class BorrowServiceImpl implements BorrowService {
 //        Map<String,BorrowRateLineVo>  dateKeys = new HashMap<>();
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType());
         statisticsBo.setUserAddress(conditionBo.getUserAddress());
-        statisticsBo.setSupplyType(HaedalOperationType.SUPPLY.getValue());
+        statisticsBo.setSupplyType(HaedalOperationType.Collateral.getValue());
         statisticsBo.setStatisticalRole(true);//用户统计
         List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
         List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
