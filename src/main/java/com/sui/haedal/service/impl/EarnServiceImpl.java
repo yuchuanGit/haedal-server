@@ -99,9 +99,15 @@ public class EarnServiceImpl implements EarnService {
             }
             vaultVo.setApy("12.24%");
             vaultVo.setTvl(vaultVo.getTotalAsset());
-            BigDecimal tvlCapacity = BigDecimalUtil.calculate(DecimalType.SUBTRACT.getValue(),new BigDecimal(vaultVo.getSupplyCap()),
-                    new BigDecimal(vaultVo.getTotalAsset()),0,RoundingMode.DOWN);
-            vaultVo.setTvlCapacity(tvlCapacity.toString());//该池子总存款-剩余容量
+            vaultVo.setTvlCapacity("0");
+            if(vaultVo.getSupplyCap()!=null){
+                BigDecimal supplyCap = new BigDecimal(vaultVo.getSupplyCap());
+                if(supplyCap.compareTo(BigDecimal.ZERO) > 0){
+                    BigDecimal tvlCapacity = BigDecimalUtil.calculate(DecimalType.SUBTRACT.getValue(),new BigDecimal(vaultVo.getSupplyCap()),
+                            new BigDecimal(vaultVo.getTotalAsset()),0,RoundingMode.DOWN);
+                    vaultVo.setTvlCapacity(tvlCapacity.toString());//该池子总存款-剩余容量
+                }
+            }
             //todo  vaultSharePrice/yieldEarned
             vaultVo.setVaultSharePrice("300");
             vaultVo.setVaultSharePriceGrowth("10%");
