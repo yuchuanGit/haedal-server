@@ -66,9 +66,7 @@ public class EarnServiceImpl implements EarnService {
             BeanUtils.copyProperties(vault, vo);
             vo.setApy("12.24%");
             vo.setTvl(vault.getTotalAsset());
-            BigDecimal tvlCapacity = BigDecimalUtil.calculate(DecimalType.SUBTRACT.getValue(),new BigDecimal(vault.getSupplyCap()),
-                    new BigDecimal(vault.getTotalAsset()),0,RoundingMode.DOWN);
-            vo.setTvlCapacity(tvlCapacity.toString());//该池子总存款-剩余容量
+            setTvlCapacity(vo);//设置剩余容量
             CoinConfig coinConfig = coinConfigMap.get(vault.getAssetType());
             if(coinConfig!=null){
                 vo.setAssetTypeFeedId(coinConfig.getFeedId());
@@ -80,6 +78,17 @@ public class EarnServiceImpl implements EarnService {
         return vos;
     }
 
+
+    private void setTvlCapacity(VaultVo vo){
+        if(vo.getSupplyCap()!=null){
+            BigDecimal supplyCap = new BigDecimal(vo.getSupplyCap());
+            if(supplyCap.compareTo(BigDecimal.ZERO) > 0){
+                BigDecimal tvlCapacity = BigDecimalUtil.calculate(DecimalType.SUBTRACT.getValue(),supplyCap,
+                        new BigDecimal(vo.getTotalAsset()),0,RoundingMode.DOWN);
+                vo.setTvlCapacity(tvlCapacity.toString());//该池子总存款-剩余容量
+            }
+        }
+    }
     /**
      * Vault详情
      * @param vaultId
@@ -100,14 +109,7 @@ public class EarnServiceImpl implements EarnService {
             vaultVo.setApy("12.24%");
             vaultVo.setTvl(vaultVo.getTotalAsset());
             vaultVo.setTvlCapacity("0");
-            if(vaultVo.getSupplyCap()!=null){
-                BigDecimal supplyCap = new BigDecimal(vaultVo.getSupplyCap());
-                if(supplyCap.compareTo(BigDecimal.ZERO) > 0){
-                    BigDecimal tvlCapacity = BigDecimalUtil.calculate(DecimalType.SUBTRACT.getValue(),new BigDecimal(vaultVo.getSupplyCap()),
-                            new BigDecimal(vaultVo.getTotalAsset()),0,RoundingMode.DOWN);
-                    vaultVo.setTvlCapacity(tvlCapacity.toString());//该池子总存款-剩余容量
-                }
-            }
+            setTvlCapacity(vaultVo);//设置剩余容量
             //todo  vaultSharePrice/yieldEarned
             vaultVo.setVaultSharePrice("300");
             vaultVo.setVaultSharePriceGrowth("10%");
