@@ -20,7 +20,7 @@ public class TimePeriodUtil {
 
     public static List<TimePeriodStatisticsVo> getTimePeriodData(TimePeriodStatisticsBo statisticsBo,
                                                                  List<TimePeriodStatisticsVo> inputVos,List<TimePeriodStatisticsVo> lessThanInputVos,
-                                                                 List<TimePeriodStatisticsVo> outVos,List<TimePeriodStatisticsVo> lessThanOutVos){
+                                                                 List<TimePeriodStatisticsVo> outVos,List<TimePeriodStatisticsVo> lessThanOutVos,Boolean isUsd){
         List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
         Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
         List<String> depositTransactionTimes = new ArrayList<>();//存交易时间
@@ -30,8 +30,8 @@ public class TimePeriodUtil {
         /**存/取币种所有feedId查询Pyth价格**/
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
         /**存/取list转map计算usd**/
-        Map<String, TimePeriodStatisticsVo> dateUnitDepositMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(inputVos,lessThanInputVos,coinPrice,depositTransactionTimes,null);
-        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(outVos,lessThanOutVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
+        Map<String, TimePeriodStatisticsVo> dateUnitDepositMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(inputVos,lessThanInputVos,coinPrice,depositTransactionTimes,null,isUsd);
+        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(outVos,lessThanOutVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps,isUsd);
 
         /**循环存时间点匹配对应取时间点 计算当前剩余数量**/
         TimePeriodUtil.matchDepositTimeCalculate(dateUnitDepositMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
@@ -234,16 +234,21 @@ public class TimePeriodUtil {
      */
     public static Map<String, TimePeriodStatisticsVo> timePeriodDataConvertDateUnitMaps(
             List<TimePeriodStatisticsVo> timePeriodData ,  List<TimePeriodStatisticsVo> ltStartTimeVos,
-            Map<String, PythCoinFeedPriceVo> coinPrice,List<String> transactionTimes,Map<String, TimePeriodStatisticsVo> dateUnitRemoveMaps){
+            Map<String, PythCoinFeedPriceVo> coinPrice,List<String> transactionTimes,Map<String, TimePeriodStatisticsVo> dateUnitRemoveMaps,Boolean isUsd){
         Map<String, TimePeriodStatisticsVo> dateUnitMaps = new HashMap<>();
-//        BigDecimal cumulativeSum = new BigDecimal(0.00);//累计数量
-        BigDecimal cumulativeSum = lessThanStartTimeTotalSumUsd(ltStartTimeVos,coinPrice);//小于开始统计时间usd价格
+        BigDecimal cumulativeSum = lessThanStartTimeTotalSum(ltStartTimeVos);
+        if(isUsd){
+            cumulativeSum = lessThanStartTimeTotalSumUsd(ltStartTimeVos,coinPrice);//小于开始统计时间usd价格
+        }
         for (TimePeriodStatisticsVo statisticsVo : timePeriodData) {
-            PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(statisticsVo.getFeedId());
-            BigDecimal usdUnitPrice = feedIdUsdUnitPrice(pythCoinFeedPrice);// 计算FeedId对应USD单价
             // 计算币种金额的浮点值（假设CalculateCoinDecimalFloat方法已实现）
             BigDecimal floatAmountVal = calculateCoinDecimalFloat(statisticsVo.getVal(), statisticsVo.getCoinType());
-            BigDecimal coinUsdAmount = floatAmountVal.multiply(usdUnitPrice);// 计算USD金额并累加
+            BigDecimal coinUsdAmount = floatAmountVal;// 精度价格
+            if(isUsd){
+                PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(statisticsVo.getFeedId());
+                BigDecimal usdUnitPrice = feedIdUsdUnitPrice(pythCoinFeedPrice);// 计算FeedId对应USD单价
+                coinUsdAmount = floatAmountVal.multiply(usdUnitPrice);// 计算USD金额
+            }
             cumulativeSum = cumulativeSum.add(coinUsdAmount);
             statisticsVo.setVal(roundingModeStr(cumulativeSum,2,RoundingMode.DOWN));
             statisticsVo.setTotalVal(roundingModeStr(cumulativeSum,2,RoundingMode.DOWN));
@@ -443,6 +448,15 @@ public class TimePeriodUtil {
             BigDecimal floatAmountVal = TimePeriodUtil.calculateCoinDecimalFloat(ltVo.getVal(), ltVo.getCoinType());
             BigDecimal coinUsdAmount = floatAmountVal.multiply(usdUnitPrice);// 计算USD金额并累加
             lessThanStartBaseSum = lessThanStartBaseSum.add(coinUsdAmount);
+        }
+        return lessThanStartBaseSum;
+    }
+
+    public static BigDecimal lessThanStartTimeTotalSum(List<TimePeriodStatisticsVo>  ltVos){
+        BigDecimal lessThanStartBaseSum = new BigDecimal(0.00);//小于统计开始时间基础总计
+        for (TimePeriodStatisticsVo ltVo : ltVos) {
+            BigDecimal floatAmountVal = TimePeriodUtil.calculateCoinDecimalFloat(ltVo.getVal(), ltVo.getCoinType());
+            lessThanStartBaseSum = lessThanStartBaseSum.add(floatAmountVal);
         }
         return lessThanStartBaseSum;
     }

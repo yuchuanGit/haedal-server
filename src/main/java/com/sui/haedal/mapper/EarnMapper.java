@@ -13,6 +13,13 @@ import java.util.List;
 @Mapper
 public interface EarnMapper extends BaseMapper<Vault> {
 
+
+    /**
+     * Vault apy查询
+     * @param vaultId
+     * @return
+     */
+    List<VaultVo> vaultApy(String vaultId);
     /**
      * vault池分配借款池比例资金信息
      * @param vaultId

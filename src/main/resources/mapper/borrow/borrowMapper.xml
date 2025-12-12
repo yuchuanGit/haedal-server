@@ -104,9 +104,16 @@
     </select>
 
     <select id="borrowTimePeriodStatisticsSupplyOrCollateral" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
-        SELECT userMarket.*,cc.coin_type,cc.feed_id from
+        SELECT userMarket.*,cc.feed_id from
         (SELECT DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i' ) AS transaction_time,
-        DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,sum( assets ) AS val,market_id,max(collateral_token_type) collateral_token_type FROM borrow_supply_detail
+        DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,sum( assets ) AS val,market_id,
+        <if test="supplyType==1">
+            max(loan_token_type) coin_type
+        </if>
+        <if test="supplyType==2">
+            max(collateral_token_type) coin_type
+        </if>
+         FROM borrow_supply_detail
         WHERE supply_type =#{supplyType}
         and transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
         <choose>
@@ -118,7 +125,7 @@
             </otherwise>
         </choose>
         GROUP BY dateUnit,market_id) userMarket
-        left join coin_config cc on cc.coin_type=userMarket.collateral_token_type ORDER BY userMarket.dateUnit
+        left join coin_config cc on cc.coin_type=userMarket.coin_type ORDER BY userMarket.dateUnit
     </select>
 
     <select id="borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
@@ -130,7 +137,12 @@
         (
         SELECT
         market_id,sum( assets ) AS val,
-        max( collateral_token_type ) collateral_token_type
+        <if test="supplyType==1">
+            max(loan_token_type) coin_type
+        </if>
+        <if test="supplyType==2">
+            max(collateral_token_type) coin_type
+        </if>
         FROM borrow_supply_detail
         WHERE  supply_type = #{supplyType}
         <choose>
@@ -145,7 +157,7 @@
         GROUP BY
         market_id
         ) userMarket
-        LEFT JOIN coin_config cc ON cc.coin_type = userMarket.collateral_token_type
+        LEFT JOIN coin_config cc ON cc.coin_type = userMarket.coin_type
     </select>
 
     <select id="borrowWithdraw" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">

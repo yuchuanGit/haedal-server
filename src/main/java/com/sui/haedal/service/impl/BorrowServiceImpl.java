@@ -234,7 +234,7 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> supplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawVos = borrowMapper.borrowWithdraw(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawLtVos =  borrowMapper.borrowWithdrawLTTransactionTime(statisticsBo);
-        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos,false);
         return resultData;
     }
 
@@ -253,7 +253,7 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.borrowCollateralWithdraw(statisticsBo);
         List<TimePeriodStatisticsVo> collateralWithdrawLtVos =borrowMapper.borrowCollateralWithdrawLTTransactionTime(statisticsBo);
-        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,collateralSupplyVos,collateralSupplyLtVos,collateralWithdrawVos,collateralWithdrawLtVos);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,collateralSupplyVos,collateralSupplyLtVos,collateralWithdrawVos,collateralWithdrawLtVos,false);
         return resultData;
     }
 
@@ -271,7 +271,7 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> supplyLtVos =  borrowMapper.borrowTimePeriodStatisticsLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawVos = borrowMapper.borrowRepayTimePeriodStatistics(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawLtVos =  borrowMapper.borrowRepayTimePeriodStatisticsLTTransactionTime(statisticsBo);
-        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos,false);
         return resultData;
     }
 
@@ -498,8 +498,8 @@ public class BorrowServiceImpl implements BorrowService {
 
 //        List<BorrowRateLineVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerate(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
         /**存/取list转map计算usd**/
-        Map<String, TimePeriodStatisticsVo> dateUnitSupplyMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralSupplyVos,collateralSupplyLtVos,coinPrice,supplyTransactionTimes,null);
-        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralWithdrawVos,collateralWithdrawLtVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
+        Map<String, TimePeriodStatisticsVo> dateUnitSupplyMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralSupplyVos,collateralSupplyLtVos,coinPrice,supplyTransactionTimes,null,true);
+        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralWithdrawVos,collateralWithdrawLtVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps,true);
         /**循环存时间点匹配对应取时间点 计算当前剩余数量**/
         TimePeriodUtil.matchDepositTimeCalculate(dateUnitSupplyMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
         /**循环取时间点匹配对应取时间点 计算当前剩余数量**/

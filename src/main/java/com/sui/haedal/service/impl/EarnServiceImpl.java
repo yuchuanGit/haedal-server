@@ -59,12 +59,17 @@ public class EarnServiceImpl implements EarnService {
         List<VaultVo> vos = new ArrayList<>();
         List<Vault> list = earnMapper.selectList(Wrappers.<Vault>query().lambda());
         List<StrategyVo> strategyVos = earnMapper.allVaultStrategy();
+        List<VaultVo> vaultApyVos = earnMapper.vaultApy(null);
         Map<String,List<StrategyVo>> vaultMaps = strategyVos.stream().collect(Collectors.groupingBy(StrategyVo::getVaultId));
+        Map<String,VaultVo> vaultApyMaps =vaultApyVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
         Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
         for (Vault vault : list) {
             VaultVo vo = new VaultVo();
             BeanUtils.copyProperties(vault, vo);
-            vo.setApy("12.24%");
+            VaultVo vaultApy = vaultApyMaps.get(vault.getVaultId());
+            if(vaultApy!=null){
+                vo.setApy(vaultApy.getApy()+"%");
+            }
             vo.setTvl(vault.getTotalAsset());
             setTvlCapacity(vo);//设置剩余容量
             CoinConfig coinConfig = coinConfigMap.get(vault.getAssetType());
@@ -106,14 +111,16 @@ public class EarnServiceImpl implements EarnService {
                 vaultVo.setAssetTypeFeedId(coinConfig.getFeedId());
                 vaultVo.setAssetTypeFeedObjectId(coinConfig.getFeedObjectId());
             }
-            vaultVo.setApy("12.24%");
+
             vaultVo.setTvl(vaultVo.getTotalAsset());
             vaultVo.setTvlCapacity("0");
             setTvlCapacity(vaultVo);//设置剩余容量
-            //todo  vaultSharePrice/yieldEarned
-            vaultVo.setVaultSharePrice("300");
-            vaultVo.setVaultSharePriceGrowth("10%");
-            vaultVo.setYieldEarned("1.8");
+            List<VaultVo> vaultApyVos = earnMapper.vaultApy(vaultId);
+            if(vaultApyVos.size()>0){
+                vaultVo.setApy(vaultApyVos.get(0).getApy()+"%");
+            }
+            //todo  yieldEarned
+            vaultVo.setYieldEarned("0");
         }
         return vaultVo;
     }
@@ -151,33 +158,6 @@ public class EarnServiceImpl implements EarnService {
      */
     @Override
     public List<TimePeriodStatisticsVo> yourDepositsWithdraw(EarnTotalBo bo){
-//        /*List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
-//        Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
-//        List<String> depositTransactionTimes = new ArrayList<>();//存交易时间
-//        List<String> withdrawTransactionTimes = new ArrayList<>();//取交易时间
-//        *//**获取时间段类型 时间段数据**//*
-//        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
-//        statisticsBo.setBusinessPoolId(bo.getVaultId());
-//        statisticsBo.setUserAddress(bo.getUserAddress());
-//        *//**根据时间段查询存/取数据**//*
-//        List<TimePeriodStatisticsVo> userDepositVos = earnMapper.userDeposit(statisticsBo);
-//        List<TimePeriodStatisticsVo> userWithdrawVos = earnMapper.userWithdraw(statisticsBo);
-//        Map<String,String> feedIds = TimePeriodUtil.getInputAndOutFeedIds(userDepositVos,userWithdrawVos);
-//        *//**存/取币种所有feedId查询Pyth价格**//*
-//        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
-//        Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
-//        *//**存/取list转map计算usd**//*
-//        Map<String, TimePeriodStatisticsVo> dateUnitDepositMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(userDepositVos,new ArrayList<>(),coinPrice,depositTransactionTimes,null);
-//        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(userWithdrawVos,new ArrayList<>(),coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps);
-//        *//**循环存时间点匹配对应取时间点 计算当前剩余数量**//*
-//        TimePeriodUtil.matchDepositTimeCalculate(dateUnitDepositMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
-//        *//**循环取时间点匹配对应取时间点 计算当前剩余数量**//*
-//        TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitDepositMap,dateUnitKeys);
-//        *//**虚拟时间段生成**//*
-//        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
-//        *//**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**//*
-//        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimeP*/eriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
-
         /**获取时间段类型 时间段数据**/
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
         statisticsBo.setUserAddress(bo.getUserAddress());
@@ -187,7 +167,7 @@ public class EarnServiceImpl implements EarnService {
         List<TimePeriodStatisticsVo> depositLtVos = earnMapper.vaultDepositLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawVos = earnMapper.vaultWithdraw(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawLtVos = earnMapper.vaultWithdrawLTTransactionTime(statisticsBo);
-        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos,true);
         return resultData;
     }
 
@@ -208,7 +188,7 @@ public class EarnServiceImpl implements EarnService {
         List<TimePeriodStatisticsVo> depositLtVos = earnMapper.vaultDepositLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawVos = earnMapper.vaultWithdraw(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawLtVos = earnMapper.vaultWithdrawLTTransactionTime(statisticsBo);
-        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos,false);
         return resultData;
     }
 
