@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod  # 默认激活开发环境（可改为test/prod）
+    active: dev  # 默认激活开发环境（可改为test/prod）
   application:
     name: haedal-server
 
