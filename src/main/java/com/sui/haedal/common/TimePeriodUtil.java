@@ -160,9 +160,8 @@ public class TimePeriodUtil {
     public static void matchWithdrawTimeCalculate(Map<String,TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps,Map<String,TimePeriodStatisticsVo> dateUnitDepositMaps,
                                             Map<String,TimePeriodStatisticsVo> dateKeys){
         List<String> supplyKeys = timeStrSortDescLambda(dateUnitDepositMaps);
-
         SimpleDateFormat targetSdf = new SimpleDateFormat("MM/dd HH");
-
+        BigDecimal baseVal = new BigDecimal(0.00);
         for (TimePeriodStatisticsVo withdraw : dateUnitRemoveWithdrawMaps.values()) {
             // 获取新的小于当前时间的key
             String newLessThanTimeStr = tagerNewLessThanKey(withdraw.getTransactionTime(), supplyKeys);
@@ -179,6 +178,9 @@ public class TimePeriodUtil {
                 } else {
                     //对应时间点累计统计值-取出值
                     BigDecimal val = getStrBigDecimal(deposit.getTotalVal()).subtract(getStrBigDecimal(withdraw.getVal()));
+                    if(val.compareTo(baseVal)<0){
+                        val = baseVal;
+                    }
                     withdraw.setVal(val.toPlainString());
                     dateKeys.put(withdraw.getDateUnit(),withdraw);
                 }
@@ -194,6 +196,7 @@ public class TimePeriodUtil {
                                            Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap,Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps,
                                           Boolean isWeek,Map<String,TimePeriodStatisticsVo> dateKeys){
         withdrawTransactionTimes.sort((s1,s2)-> s2.compareTo(s1));//倒序
+        BigDecimal baseVal = new BigDecimal(0.00);
         for (TimePeriodStatisticsVo deposit : dateUnitDepositMap.values()) {
             TimePeriodStatisticsVo withdraw = dateUnitWithdrawMap.get(deposit.getDateUnit());
             if (withdraw == null) {
@@ -207,11 +210,17 @@ public class TimePeriodUtil {
                     log.info("取抵押没有小于存TransactionTime%="+deposit.getTransactionTime());
                 }else{
                     BigDecimal val = getStrBigDecimal(deposit.getVal()).subtract(getStrBigDecimal(withdrawLessThanSupply.getVal()));
+                    if(val.compareTo(baseVal)<0){
+                        val = baseVal;
+                    }
                     deposit.setVal(val.toPlainString());
                 }
             } else {
                 try {
                     BigDecimal val = getStrBigDecimal(deposit.getVal()).subtract(getStrBigDecimal(withdraw.getVal()));
+                    if(val.compareTo(baseVal)<0){
+                        val = baseVal;
+                    }
                     deposit.setVal(val.toPlainString());
                 } catch (NumberFormatException e) {
                     // 处理数字转换异常
