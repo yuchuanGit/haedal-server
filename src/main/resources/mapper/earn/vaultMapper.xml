@@ -11,15 +11,15 @@
     </select>
     <select id="vaultStrategy" resultType="com.sui.haedal.model.vo.StrategyVo">
        SELECT vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps,rd.borrow_rate apy from vault_set_allocation_cap vbc
-        INNER JOIN (select MAX(id) lastId from vault_set_allocation_cap where vault_id=#{vaultId} GROUP BY vault_id,market_id) lastvbc
-        on lastvbc.lastId=vbc.id
+        INNER JOIN (select MAX(transaction_time) transaction_time from vault_set_allocation_cap where vault_id=#{vaultId} GROUP BY vault_id,market_id) lastvbc
+        on lastvbc.transaction_time=vbc.transaction_time
         left join borrow b on b.market_id=vbc.market_id
         left join (SELECT market_id,max(transaction_time) transaction_time,ANY_VALUE(borrow_rate) borrow_rate from rate_detail GROUP BY market_id) rd on rd.market_id=vbc.market_id
     </select>
 
     <select id="allVaultStrategy" resultType="com.sui.haedal.model.vo.StrategyVo">
         SELECT b.market_id,vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps from vault_set_allocation_cap vbc
-        INNER JOIN (select MAX(id) lastId from vault_set_allocation_cap  GROUP BY vault_id,market_id) lastvbc on lastvbc.lastId=vbc.id
+        INNER JOIN (select MAX(transaction_time) transaction_time from vault_set_allocation_cap  GROUP BY vault_id,market_id) lastvbc on lastvbc.transaction_time=vbc.transaction_time
         left join borrow b on b.market_id=vbc.market_id
     </select>
 
@@ -37,14 +37,14 @@
         FROM
         (
         SELECT
-        DATE_FORMAT( max( timestamp_ms ), '%Y-%m-%d %H:%i' ) AS transaction_time,
-        DATE_FORMAT( timestamp_ms, #{mysqlDateFormat}) AS dateUnit,
+        DATE_FORMAT( max( transaction_time ), '%Y-%m-%d %H:%i' ) AS transaction_time,
+        DATE_FORMAT( transaction_time, #{mysqlDateFormat}) AS dateUnit,
         sum(asset_amount) AS val,
         vault_id,
         max(asset_type) coin_type
         FROM
         vault_deposit
-        WHERE  timestamp_ms &gt;= #{start} AND timestamp_ms &lt;= #{end}
+        WHERE  transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
         <choose>
             <when test="statisticalRole==true">
                 AND user = #{userAddress}
@@ -71,7 +71,7 @@
         SELECT
         vault_id,sum(asset_amount) AS val,max(asset_type) coin_type
         FROM vault_deposit
-        WHERE  timestamp_ms &lt;= #{start}
+        WHERE  transaction_time &lt;= #{start}
         <choose>
             <when test="statisticalRole==true">
                 AND user = #{userAddress}
@@ -92,14 +92,14 @@
         FROM
         (
         SELECT
-        DATE_FORMAT( max( timestamp_ms ), '%Y-%m-%d %H:%i' ) AS transaction_time,
-        DATE_FORMAT(timestamp_ms, #{mysqlDateFormat}) AS dateUnit,
+        DATE_FORMAT( max( transaction_time ), '%Y-%m-%d %H:%i' ) AS transaction_time,
+        DATE_FORMAT(transaction_time, #{mysqlDateFormat}) AS dateUnit,
         sum(asset_amount) AS val,
         vault_id,
         max( asset_type) AS coin_type
         FROM
         vault_withdraw
-        WHERE   timestamp_ms &gt;= #{start} AND timestamp_ms &lt;= #{end}
+        WHERE   transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
         <choose>
             <when test="statisticalRole==true">
                 AND user = #{userAddress}
@@ -124,7 +124,7 @@
         SELECT
         vault_id,sum(asset_amount) AS val,max(asset_type) AS coin_type
         FROM vault_withdraw
-        WHERE  timestamp_ms &lt;= #{start}
+        WHERE  transaction_time &lt;= #{start}
         <choose>
             <when test="statisticalRole==true">
                 AND user = #{userAddress}
