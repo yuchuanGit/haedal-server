@@ -238,6 +238,17 @@ public class BorrowServiceImpl implements BorrowService {
         return resultData;
     }
 
+    private Borrow getMarketId(String marketId){
+        Borrow borrow = null;
+        LambdaQueryWrapper<Borrow>  queryWrapper = Wrappers.<Borrow>query().lambda();
+        queryWrapper.eq(Borrow::getMarketId,marketId);
+        List<Borrow> list = borrowMapper.selectList(queryWrapper);
+        if(list.size()>0){
+            borrow = list.get(0);
+        }
+        return borrow;
+    }
+
     /**
      * borrow 资产存入抵押品统计
      * @param bo

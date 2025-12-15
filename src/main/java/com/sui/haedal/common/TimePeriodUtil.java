@@ -336,6 +336,14 @@ public class TimePeriodUtil {
             return 9;
         }else if("USDC".equals(typeVal)){
             return 6;
+        }else if("ETH".equals(typeVal)){
+            return 18;
+        }else if("CETUS".equals(typeVal)){
+            return 9;
+        }else if("HASUI".equals(typeVal)){
+            return 9;
+        }else if("USDT".equals(typeVal)){
+            return 6;
         }
         return 0;
     }
