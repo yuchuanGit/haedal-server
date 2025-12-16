@@ -154,8 +154,11 @@ public class DateUtil {
      */
     private static TimePeriodStatisticsVo initTimePeriodStatistics(LocalDateTime dateTime, boolean isHours) {
         TimePeriodStatisticsVo m = new TimePeriodStatisticsVo();
-//        m.setTransactionTimeT(Date.from(dateTime.atZone(ZoneId.systemDefault()).toInstant()));
-        m.setTransactionTime(dateTime.format(DateTimeFormatter.ofPattern(DATE_FORMAT_YMD_HM)));
+        if(isHours){
+            m.setTransactionTime(dateTime.format(DateTimeFormatter.ofPattern(DATE_FORMAT_YMD_HM)));
+        }else{
+            m.setTransactionTime(dateTime.format(DateTimeFormatter.ofPattern(DATE_FORMAT_YMD))+" 00:00");
+        }
         m.setDateUnit(dateTime.format(getDateGroupFormatter(isHours)));
         return m;
     }

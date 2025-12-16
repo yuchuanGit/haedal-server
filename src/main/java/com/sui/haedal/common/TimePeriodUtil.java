@@ -130,45 +130,46 @@ public class TimePeriodUtil {
                         matchValue(rsVal,statisticsBo,dateKeys,supplyWithdrawKeysDesc,supplyWithdrawKeys,obj);
                     }
                 }else{
+                    matchValue(rsVal,statisticsBo,dateKeys,supplyWithdrawKeysDesc,supplyWithdrawKeys,obj);
                     // 获取小于目标时间的key列表并降序排序
-                    List<String> lessThanKeys = tagerLessThanKeys(rsVal.getTransactionTime(), supplyWithdrawKeysDesc);
-                    lessThanKeys.sort((k1, k2) -> {
-                        Date t1 = parseTimeKey(k1);
-                        Date t2 = parseTimeKey(k2);
-                        return t2.compareTo(t1); // 降序排序
-                    });
-
-                    // 获取最新的小于目标时间的key
-                    String newLessThanTimeStr = tagerNewLessThanKey(rsVal.getTransactionTime(), lessThanKeys);
-                    Date timeL = parseTimeKey(newLessThanTimeStr);
-
-                    if (timeL != null) {
-                        String targetStr = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeL);
-                        TimePeriodStatisticsVo supplyWithdrawL = dateKeys.get(targetStr);
-
-                        if (supplyWithdrawL == null) {
-                            // 获取大于目标时间的key
-                            String newGreaterThanTimeStr = tagerNewGreaterThanKey(rsVal.getTransactionTime(), supplyWithdrawKeys);
-                            Date timeG = parseTimeKey(newGreaterThanTimeStr);
-                            if (timeG != null) {
-                                String targetStrG = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeG);
-                                TimePeriodStatisticsVo supplyWithdrawG = dateKeys.get(targetStrG);
-                                if (supplyWithdrawG == null) {
-                                    log.info("没有大于TransactionTime={}", rsVal.getTransactionTime());
-                                } else {
-                                    obj.setTransactionTime(rsVal.getTransactionTime());
-                                    obj.setDateUnit(rsVal.getDateUnit());
-                                    obj.setVal(supplyWithdrawG.getVal());
-                                    obj.setTotalVal(supplyWithdrawG.getTotalVal());
-                                }
-                            }
-                        } else {
-                            obj.setTransactionTime(rsVal.getTransactionTime());
-                            obj.setDateUnit(rsVal.getDateUnit());
-                            obj.setVal(supplyWithdrawL.getVal());
-                            obj.setTotalVal(supplyWithdrawL.getTotalVal());
-                        }
-                    }
+//                    List<String> lessThanKeys = tagerLessThanKeys(rsVal.getTransactionTime(), supplyWithdrawKeysDesc);
+//                    lessThanKeys.sort((k1, k2) -> {
+//                        Date t1 = parseTimeKey(k1);
+//                        Date t2 = parseTimeKey(k2);
+//                        return t2.compareTo(t1); // 降序排序
+//                    });
+//
+//                    // 获取最新的小于目标时间的key
+//                    String newLessThanTimeStr = tagerNewLessThanKey(rsVal.getTransactionTime(), lessThanKeys);
+//                    Date timeL = parseTimeKey(newLessThanTimeStr);
+//
+//                    if (timeL != null) {
+//                        String targetStr = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeL);
+//                        TimePeriodStatisticsVo supplyWithdrawL = dateKeys.get(targetStr);
+//
+//                        if (supplyWithdrawL == null) {
+//                            // 获取大于目标时间的key
+//                            String newGreaterThanTimeStr = tagerNewGreaterThanKey(rsVal.getTransactionTime(), supplyWithdrawKeys);
+//                            Date timeG = parseTimeKey(newGreaterThanTimeStr);
+//                            if (timeG != null) {
+//                                String targetStrG = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeG);
+//                                TimePeriodStatisticsVo supplyWithdrawG = dateKeys.get(targetStrG);
+//                                if (supplyWithdrawG == null) {
+//                                    log.info("没有大于TransactionTime={}", rsVal.getTransactionTime());
+//                                } else {
+//                                    obj.setTransactionTime(rsVal.getTransactionTime());
+//                                    obj.setDateUnit(rsVal.getDateUnit());
+//                                    obj.setVal(supplyWithdrawG.getVal());
+//                                    obj.setTotalVal(supplyWithdrawG.getTotalVal());
+//                                }
+//                            }
+//                        } else {
+//                            obj.setTransactionTime(rsVal.getTransactionTime());
+//                            obj.setDateUnit(rsVal.getDateUnit());
+//                            obj.setVal(supplyWithdrawL.getVal());
+//                            obj.setTotalVal(supplyWithdrawL.getTotalVal());
+//                        }
+//                    }
                 }
             } else {
                 obj = val;
