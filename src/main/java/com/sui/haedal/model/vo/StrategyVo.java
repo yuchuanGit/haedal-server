@@ -31,4 +31,7 @@ public class StrategyVo {
 
     @Schema(description = "borrow lltv")
     private String lltv;
+
+    @Schema(description = "borrow marketId")
+    private String marketId;
 }
