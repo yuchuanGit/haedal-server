@@ -24,6 +24,18 @@
         left join borrow b on b.market_id=vbc.market_id
     </select>
 
+    <select id="allVaultNewCurator" resultType="com.sui.haedal.model.vo.VaultVo">
+        SELECT vsc.vault_id,vsc.new_curator as curator from vault_set_curator_record vsc
+        INNER JOIN (select vault_id,max(transaction_time_unix) transaction_time_unix from vault_set_curator_record GROUP BY vault_id) rs
+        on vsc.transaction_time_unix=rs.transaction_time_unix and vsc.vault_id=rs.vault_id;
+    </select>
+
+    <select id="allVaultNewAllocator" resultType="com.sui.haedal.model.vo.VaultVo">
+        SELECT vsc.vault_id,vsc.new_allocator as allocator from vault_set_allocator_record vsc
+        INNER JOIN (select vault_id,max(transaction_time_unix) transaction_time_unix from vault_set_allocator_record GROUP BY vault_id) rs
+        on vsc.transaction_time_unix=rs.transaction_time_unix and vsc.vault_id=rs.vault_id;
+    </select>
+
     <select id="vaultDetail" resultType="com.sui.haedal.model.vo.VaultVo">
         SELECT v.*,b.collateral_token_type,b.lltv from vault v
         left join vault_set_allocation_cap vbc on vbc.vault_id=v.vault_id

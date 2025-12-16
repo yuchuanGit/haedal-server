@@ -61,8 +61,12 @@ public class EarnServiceImpl implements EarnService {
         List<Vault> list = earnMapper.selectList(Wrappers.<Vault>query().lambda());
         List<StrategyVo> strategyVos = earnMapper.allVaultStrategy();
         List<VaultVo> vaultApyVos = earnMapper.vaultApy(null);
+        List<VaultVo> allVaultNewCuratorVos = earnMapper.allVaultNewCurator();
+        List<VaultVo> allVaultNewAllocatorVos = earnMapper.allVaultNewAllocator();
         Map<String,List<StrategyVo>> vaultMaps = strategyVos.stream().collect(Collectors.groupingBy(StrategyVo::getVaultId));
         Map<String,VaultVo> vaultApyMaps =vaultApyVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
+        Map<String,VaultVo> newCuratorMaps =allVaultNewCuratorVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
+        Map<String,VaultVo> newAllocatorMaps =allVaultNewAllocatorVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
         Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
         for (Vault vault : list) {
             VaultVo vo = new VaultVo();
@@ -79,6 +83,14 @@ public class EarnServiceImpl implements EarnService {
                 vo.setAssetTypeFeedObjectId(coinConfig.getFeedObjectId());
             }
             vo.setStrategyVos(vaultMaps.get(vo.getVaultId()));
+            VaultVo newCurator = newCuratorMaps.get(vault.getVaultId());
+            if(newCurator!=null){
+                vo.setCurator(newCurator.getCurator());
+            }
+            VaultVo newAllocator = newAllocatorMaps.get(vault.getVaultId());
+            if(newAllocator!=null){
+                vo.setAllocator(newAllocator.getAllocator());
+            }
             vos.add(vo);
         }
         return vos;

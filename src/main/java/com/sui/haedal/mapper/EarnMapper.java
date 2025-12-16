@@ -31,6 +31,18 @@ public interface EarnMapper extends BaseMapper<Vault> {
     List<StrategyVo> allVaultStrategy();
 
     /**
+     * 所有Vault最新Curator
+     * @return
+     */
+    List<VaultVo> allVaultNewCurator();
+
+    /**
+     * 所有Vault最新Allocator
+     * @return
+     */
+    List<VaultVo> allVaultNewAllocator();
+
+    /**
      * Vault和borrow关联详情
      * @param vaultId
      * @return
