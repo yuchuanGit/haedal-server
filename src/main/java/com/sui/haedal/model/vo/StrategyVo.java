@@ -28,4 +28,7 @@ public class StrategyVo {
 
     @Schema(description = "borrow存款利率")
     private String apy;
+
+    @Schema(description = "borrow lltv")
+    private String lltv;
 }

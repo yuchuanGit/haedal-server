@@ -18,7 +18,7 @@
     </select>
 
     <select id="allVaultStrategy" resultType="com.sui.haedal.model.vo.StrategyVo">
-        SELECT b.market_id,vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps from vault_set_allocation_cap vbc
+        SELECT b.market_id,vbc.vault_id,b.collateral_token_type,b.loan_token_type,vbc.cap,vbc.weight_bps,b.lltv from vault_set_allocation_cap vbc
         INNER JOIN (select vault_id,market_id,MAX(transaction_time) transaction_time from vault_set_allocation_cap  GROUP BY vault_id,market_id) lastvbc
         on lastvbc.vault_id=vbc.vault_id and lastvbc.market_id=vbc.market_id and lastvbc.transaction_time=vbc.transaction_time
         left join borrow b on b.market_id=vbc.market_id
