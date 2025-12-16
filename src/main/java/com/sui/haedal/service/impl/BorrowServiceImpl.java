@@ -24,6 +24,7 @@ import javax.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -126,14 +127,18 @@ public class BorrowServiceImpl implements BorrowService {
     public List<TimePeriodStatisticsVo> borrowDetailRateStatistics(BorrowTotalBo conditionBo){
         List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
         /**获取时间段类型 时间段数据**/
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType());
+        Borrow borrow = getMarketId(conditionBo.getMarketId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType(),borrow.getTransactionTime());
         statisticsBo.setBusinessPoolId(conditionBo.getMarketId());
-        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+        Date timePeriodMinTime = borrowMapper.queryBorrowDetailRateLineMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
+        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek(),TimePeriodUtil.getCreatePoolTimeHours(statisticsBo));
         List<TimePeriodStatisticsVo> list = borrowMapper.queryBorrowDetailRateLine(statisticsBo);
         Map<String,TimePeriodStatisticsVo> dateUnitKeys = list.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)-> v1));
         /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
         if(dateUnitKeys.size()>0){
-            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo,resultData);
         }
         return resultData;
 
@@ -226,10 +231,14 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     public List<TimePeriodStatisticsVo> borrowDetailSupplyStatistics(BorrowTotalBo bo){
         /**获取时间段类型 时间段数据**/
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        Borrow borrow = getMarketId(bo.getMarketId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
         statisticsBo.setBusinessPoolId(bo.getMarketId());
         statisticsBo.setSupplyType(HaedalOperationType.SUPPLY.getValue());
         statisticsBo.setStatisticalRole(false);//borrow池 统计
+        Date timePeriodMinTime = borrowMapper.borrowTimePeriodSupplyOrCollateralMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         List<TimePeriodStatisticsVo> supplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
         List<TimePeriodStatisticsVo> supplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawVos = borrowMapper.borrowWithdraw(statisticsBo);
@@ -237,6 +246,8 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos,false);
         return resultData;
     }
+
+
 
     private Borrow getMarketId(String marketId){
         Borrow borrow = null;
@@ -256,10 +267,14 @@ public class BorrowServiceImpl implements BorrowService {
      */
     @Override
     public List<TimePeriodStatisticsVo> borrowDetailCollateralStatistics(BorrowTotalBo bo){
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        Borrow borrow = getMarketId(bo.getMarketId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
         statisticsBo.setBusinessPoolId(bo.getMarketId());
         statisticsBo.setSupplyType(HaedalOperationType.Collateral.getValue());
         statisticsBo.setStatisticalRole(false);//borrow池 统计
+        Date timePeriodMinTime = borrowMapper.borrowTimePeriodSupplyOrCollateralMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
         List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.borrowCollateralWithdraw(statisticsBo);
@@ -275,9 +290,13 @@ public class BorrowServiceImpl implements BorrowService {
      */
     @Override
     public List<TimePeriodStatisticsVo> borrowDetailStatistics(BorrowTotalBo bo){
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        Borrow borrow = getMarketId(bo.getMarketId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
         statisticsBo.setBusinessPoolId(bo.getMarketId());
         statisticsBo.setStatisticalRole(false);//borrow池 统计
+        Date timePeriodMinTime = borrowMapper.borrowTimePeriodMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         List<TimePeriodStatisticsVo> supplyVos = borrowMapper.borrowTimePeriodStatistics(statisticsBo);
         List<TimePeriodStatisticsVo> supplyLtVos =  borrowMapper.borrowTimePeriodStatisticsLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawVos = borrowMapper.borrowRepayTimePeriodStatistics(statisticsBo);
@@ -481,46 +500,19 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     public List<BorrowRateLineVo> yourTotalSupplyLine(BorrowTotalBo conditionBo){
         List<BorrowRateLineVo> data = new ArrayList<>();
-        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
-        Map<String,TimePeriodStatisticsVo> dateUnitKeys = new HashMap<>();//存/取所有数据
-        List<String> supplyTransactionTimes = new ArrayList<>();//存交易时间
-        List<String> withdrawTransactionTimes = new ArrayList<>();//取交易时间
-        Map<String, TimePeriodStatisticsVo> dateUnitRemoveWithdrawMaps = new HashMap<>();// 取map数据,用于dateUnit删除
-
-//        Map<String,TimePeriodStatisticsVo> dateSupplyMaps = new HashMap<>();
-//        Map<String,BorrowRateLineVo> dateWithdrawMaps = new HashMap<>();
-//        Map<String,BorrowRateLineVo> dateWithdrawRemoveMaps = new HashMap<>();
-//        Map<String,BorrowRateLineVo>  dateKeys = new HashMap<>();
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType());
+        Long poolTransactionTime = borrowMapper.borrowSupplyOrCollateralMinTimeMarketCreateTime(HaedalOperationType.Collateral.getValue(),conditionBo.getUserAddress());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(conditionBo.getTimePeriodType(),poolTransactionTime);
         statisticsBo.setUserAddress(conditionBo.getUserAddress());
         statisticsBo.setSupplyType(HaedalOperationType.Collateral.getValue());
         statisticsBo.setStatisticalRole(true);//用户统计
+        Date timePeriodMinTime = borrowMapper.borrowTimePeriodSupplyOrCollateralMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         List<TimePeriodStatisticsVo> collateralSupplyVos = borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateral(statisticsBo);
         List<TimePeriodStatisticsVo> collateralSupplyLtVos =  borrowMapper.borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> collateralWithdrawVos =borrowMapper.borrowCollateralWithdraw(statisticsBo);
         List<TimePeriodStatisticsVo> collateralWithdrawLtVos =borrowMapper.borrowCollateralWithdrawLTTransactionTime(statisticsBo);
-        Map<String,String> feedIds = collateralSupplyVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1));
-        feedIds.putAll(collateralWithdrawVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getFeedId, TimePeriodStatisticsVo::getFeedId,(v1, v2)->  v1)));
-        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
-//        dateSupplyMaps(collateralSupplyVos,coinPrice,dateSupplyMaps);
-//        List<String> withdrawTransactionTimes = dateWithdrawMaps(collateralWithdrawVos,coinPrice,dateWithdrawMaps,dateWithdrawRemoveMaps);
-//        matchSupplyTimeCalculate(dateSupplyMaps,withdrawTransactionTimes,dateWithdrawMaps,dateWithdrawRemoveMaps,statisticsBo.getIsWeek(),dateKeys);
-//        matchWithdrawTimeCalculate(dateSupplyMaps,dateWithdrawRemoveMaps,dateKeys);
-
-//        List<BorrowRateLineVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerate(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
-        /**存/取list转map计算usd**/
-        Map<String, TimePeriodStatisticsVo> dateUnitSupplyMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralSupplyVos,collateralSupplyLtVos,coinPrice,supplyTransactionTimes,null,true);
-        Map<String, TimePeriodStatisticsVo> dateUnitWithdrawMap = TimePeriodUtil.timePeriodDataConvertDateUnitMaps(collateralWithdrawVos,collateralWithdrawLtVos,coinPrice,withdrawTransactionTimes,dateUnitRemoveWithdrawMaps,true);
-        /**循环存时间点匹配对应取时间点 计算当前剩余数量**/
-        TimePeriodUtil.matchDepositTimeCalculate(dateUnitSupplyMap,withdrawTransactionTimes,dateUnitWithdrawMap,dateUnitRemoveWithdrawMaps,statisticsBo.getIsWeek(),dateUnitKeys);
-        /**循环取时间点匹配对应取时间点 计算当前剩余数量**/
-        TimePeriodUtil.matchWithdrawTimeCalculate(dateUnitRemoveWithdrawMaps,dateUnitSupplyMap,dateUnitKeys);
-        /**虚拟时间段生成**/
-        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
-
-        /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
-        TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
-
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,collateralSupplyVos,collateralSupplyLtVos,collateralWithdrawVos,collateralWithdrawLtVos,true);
         for (TimePeriodStatisticsVo resultDatum : resultData) {
             BorrowRateLineVo vo = new BorrowRateLineVo();
             vo.setDateUnit(resultDatum.getDateUnit());
@@ -529,64 +521,7 @@ public class BorrowServiceImpl implements BorrowService {
             vo.setTotalAmount(resultDatum.getTotalVal());
             data.add(vo);
         }
-//        List<String> supplyWithdrawKeysDesc = supplyCollateralTimeStrSortDescLambda(dateKeys); //TransactionTime日期从大到小排序
-//        List<String> supplyWithdrawKeys = supplyWithdrawKeysDesc;
-//        supplyWithdrawKeys.sort((s1,s2)-> s1.compareTo(s2)); //TransactionTime日期从小到大排序
 
-
-//        for (BorrowRateLineVo rsVal : virtualTimePeriodData) {
-//            BorrowRateLineVo obj = new BorrowRateLineVo();
-//            BorrowRateLineVo val = dateKeys.get(rsVal.getDateUnit());
-//
-//            if (val == null) {
-//                // 获取小于目标时间的key列表并降序排序
-//                List<String> lessThanKeys = tagerLessThanKeys(rsVal.getTransactionTime(), supplyWithdrawKeysDesc);
-//                lessThanKeys.sort((k1, k2) -> {
-//                    Date t1 = parseTimeKey(k1);
-//                    Date t2 = parseTimeKey(k2);
-//                    return t2.compareTo(t1); // 降序排序
-//                });
-//
-//                // 获取最新的小于目标时间的key
-//                String newLessThanTimeStr = tagerNewLessThanKey(rsVal.getTransactionTime(), lessThanKeys);
-//                Date timeL = parseTimeKey(newLessThanTimeStr);
-//
-//                if (timeL != null) {
-////                    String targetStr = new SimpleDateFormat(targetLayout).format(timeL);
-//                    String targetStr = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeL);
-//                    BorrowRateLineVo supplyWithdrawL = dateKeys.get(targetStr);
-//
-//                    if (supplyWithdrawL == null) {
-//                        // 获取大于目标时间的key
-//                        String newGreaterThanTimeStr = tagerNewGreaterThanKey(rsVal.getTransactionTime(), supplyWithdrawKeys);
-//                        Date timeG = parseTimeKey(newGreaterThanTimeStr);
-//                        if (timeG != null) {
-////                            String targetStrG = new SimpleDateFormat(targetLayout).format(timeG);
-//                            String targetStrG = DateUtil.dateGroupFormat(statisticsBo.getIsWeek(),timeG);
-//                            BorrowRateLineVo supplyWithdrawG = dateKeys.get(targetStrG);
-//
-//                            if (supplyWithdrawG == null) {
-//                                log.info("没有大于TransactionTime={}", rsVal.getTransactionTime());
-//                            } else {
-//                                obj.setTransactionTime(rsVal.getTransactionTime());
-//                                obj.setDateUnit(rsVal.getDateUnit());
-//                                obj.setAmount(supplyWithdrawG.getAmount());
-//                                obj.setTotalAmount(supplyWithdrawG.getTotalAmount());
-//                            }
-//                        }
-//                    } else {
-//                        obj.setTransactionTime(rsVal.getTransactionTime());
-//                        obj.setDateUnit(rsVal.getDateUnit());
-//                        obj.setAmount(supplyWithdrawL.getAmount());
-//                        obj.setTotalAmount(supplyWithdrawL.getTotalAmount());
-//                    }
-//                }
-//            } else {
-//                obj = val;
-//                obj.setTransactionTime(rsVal.getTransactionTime());
-//            }
-//            resultData.add(obj);
-//        }
         return data;
     }
 

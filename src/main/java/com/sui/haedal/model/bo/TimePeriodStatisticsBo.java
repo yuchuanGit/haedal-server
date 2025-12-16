@@ -35,8 +35,16 @@ public class TimePeriodStatisticsBo {
      */
     private Boolean isWeek;
 
+    @Schema(description = "统计开始时间 LocalDateTime",hidden = true)
     private LocalDateTime startLD;
 
+    @Schema(description = "统计结束时间 LocalDateTime",hidden = true)
     private LocalDateTime endLD;
+
+    @Schema(description = "统计时间段数据最小时间(第一次发送)",hidden = true)
+    private Date timePeriodMinTime;
+
+    @Schema(description = "是否使用创建池子时间小时",hidden = true)
+    private Boolean isCreatePoolTimeHours = false;
 
 }

@@ -9,6 +9,7 @@ import com.sui.haedal.model.vo.BorrowRateLineVo;
 import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -27,6 +28,13 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
      * @return
      */
     List<TimePeriodStatisticsVo> borrowTimePeriodStatistics(TimePeriodStatisticsBo bo);
+
+    /**
+     *  borrow借时间段统计 最小时间
+     * @param bo
+     * @return
+     */
+    Date borrowTimePeriodMinTime(TimePeriodStatisticsBo bo);
 
     /**
      * borrow借时间段统计 小于TransactionTime
@@ -48,6 +56,14 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
      * @return
      */
     List<TimePeriodStatisticsVo> borrowRepayTimePeriodStatisticsLTTransactionTime(TimePeriodStatisticsBo bo);
+
+
+    /**
+     * borrow存资产/存抵押 market创建时间
+     * @return
+     */
+    Long borrowSupplyOrCollateralMinTimeMarketCreateTime(Integer supplyType,String userAddress);
+
     /**
      * borrow时间段统计 存资产/存抵押
      * @param bo
@@ -56,11 +72,19 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
     List<TimePeriodStatisticsVo> borrowTimePeriodStatisticsSupplyOrCollateral(TimePeriodStatisticsBo bo);
 
     /**
+     * borrow时间段统计 存资产/存抵押 最小时间
+     * @param bo
+     * @return
+     */
+    Date borrowTimePeriodSupplyOrCollateralMinTime(TimePeriodStatisticsBo bo);
+
+    /**
      *  borrow时间段统计小于TransactionTime 存资产/存抵押
      * @param bo
      * @return
      */
     List<TimePeriodStatisticsVo> borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime(TimePeriodStatisticsBo bo);
+
 
     /**
      *  borrow时间段统计 取抵押
@@ -93,11 +117,19 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
     List<BorrowRateLineVo> queryBorrowDetailLine(YourTotalSupplyLineBo mysqlConditionBo);
 
     /**
-     * borrow 详情借利率统计每天最新利率
+     * borrow 详情借利率时间段统计每天最新利率
      * @param statisticsBo
      * @return
      */
     List<TimePeriodStatisticsVo> queryBorrowDetailRateLine(TimePeriodStatisticsBo statisticsBo);
+
+    /**
+     * borrow 详情借利率时间段统计 最小时间
+     * @param statisticsBo
+     * @return
+     */
+    Date queryBorrowDetailRateLineMinTime(TimePeriodStatisticsBo statisticsBo);
+
 
     /**
      * 池子当前利用率 = 总借款/总供应

@@ -8,6 +8,7 @@ import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
 import com.sui.haedal.model.vo.VaultVo;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.Date;
 import java.util.List;
 
 @Mapper
@@ -45,6 +46,20 @@ public interface EarnMapper extends BaseMapper<Vault> {
     List<TimePeriodStatisticsVo>  vaultDeposit(TimePeriodStatisticsBo bo);
 
     /**
+     * earn 统计vault时间段存入 最小时间
+     * @param bo
+     * @return
+     */
+    Date vaultDepositMinTime(TimePeriodStatisticsBo bo);
+
+    /**
+     * 获取存入最小时间找到对应vault创建时间
+     * @param bo
+     * @return
+     */
+    Long depositMinTimeVaultCreateTime(TimePeriodStatisticsBo bo);
+
+    /**
      * earn 统计vault时间段小于TransactionTime存入数量
      * @param bo
      * @return
@@ -71,6 +86,13 @@ public interface EarnMapper extends BaseMapper<Vault> {
      * @return
      */
     List<TimePeriodStatisticsVo> vaultAPYStatistics(TimePeriodStatisticsBo bo);
+
+    /**
+     * earn 统计vault时间段APY 最小时间
+     * @param bo
+     * @return
+     */
+    Date vaultAPYStatisticsMinTime(TimePeriodStatisticsBo bo);
 
     /**
      * earn 统计vault小于TransactionTime 份额价格

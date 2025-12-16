@@ -28,6 +28,18 @@
         ORDER BY borrowTotal.dateUnit;
     </select>
 
+    <select id="borrowTimePeriodMinTime" resultType="date">
+         SELECT min(transaction_time) transaction_time from borrow_supply_detail WHERE  transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+    </select>
+
     <select id="borrowTimePeriodStatisticsLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT
         borrowTotal.*,
@@ -103,6 +115,13 @@
 
     </select>
 
+    <select id="borrowSupplyOrCollateralMinTimeMarketCreateTime" resultType="long">
+        SELECT transaction_time from borrow where market_id=
+        (SELECT market_id from borrow_supply_detail where transaction_time_unix=
+        (SELECT min(transaction_time_unix) minTime from borrow_supply_detail
+        where supply_type =#{supplyType}  AND caller_address =#{userAddress}
+        ));
+    </select>
     <select id="borrowTimePeriodStatisticsSupplyOrCollateral" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT userMarket.*,cc.feed_id from
         (SELECT DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i' ) AS transaction_time,
@@ -126,6 +145,19 @@
         </choose>
         GROUP BY dateUnit,market_id) userMarket
         left join coin_config cc on cc.coin_type=userMarket.coin_type ORDER BY userMarket.dateUnit
+    </select>
+
+    <select id="borrowTimePeriodSupplyOrCollateralMinTime" resultType="date">
+        SELECT min(transaction_time) transaction_time from borrow_supply_detail WHERE  supply_type=#{supplyType}
+        and transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND caller_address =#{userAddress}
+            </when>
+            <otherwise>
+                AND market_id =#{businessPoolId}
+            </otherwise>
+        </choose>
     </select>
 
     <select id="borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
@@ -290,6 +322,11 @@
         ) t ON DATE_FORMAT(
         transaction_time,#{mysqlDateFormat}) = t.timeGroup
         AND rd.transaction_time = t.last_time
+    </select>
+
+    <select id="queryBorrowDetailRateLineMinTime" resultType="date">
+        SELECT min(transaction_time) transaction_time from rate_detail WHERE  market_id =#{businessPoolId}
+        AND transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
     </select>
 
 

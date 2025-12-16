@@ -31,6 +31,35 @@
         where v.vault_id=#{vaultId}
     </select>
 
+    <select id="depositMinTimeVaultCreateTime" resultType="long">
+        SELECT transaction_time_unix from vault where vault_id=
+        (SELECT vault_id from vault_deposit where transaction_time_unix=
+        (SELECT min(transaction_time_unix) minTime from vault_deposit
+        where 1=1
+        <choose>
+            <when test="statisticalRole==true">
+                AND user = #{userAddress}
+            </when>
+            <otherwise>
+                AND vault_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+        ));
+
+    </select>
+
+    <select id="vaultDepositMinTime" resultType="date">
+        SELECT min(transaction_time) minTime from vault_deposit WHERE  transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
+        <choose>
+            <when test="statisticalRole==true">
+                AND user = #{userAddress}
+            </when>
+            <otherwise>
+                AND vault_id =#{businessPoolId}
+            </otherwise>
+        </choose>
+    </select>
+
     <select id="vaultDeposit" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT
         vaultDepositTotal.*,
@@ -147,6 +176,10 @@
         FROM vault_apy
         WHERE  transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
         GROUP BY dateUnit
+    </select>
+
+    <select id="vaultAPYStatisticsMinTime" resultType="date">
+        SELECT min(transaction_time) minTime from vault_apy where transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
     </select>
 
     <select id="vaultSharePriceLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">

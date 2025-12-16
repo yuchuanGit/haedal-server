@@ -13,6 +13,7 @@ import com.sui.haedal.mapper.EarnMapper;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
+import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
 import com.sui.haedal.model.entity.Vault;
 import com.sui.haedal.model.enums.DecimalType;
@@ -159,9 +160,14 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public List<TimePeriodStatisticsVo> yourDepositsWithdraw(EarnTotalBo bo){
         /**获取时间段类型 时间段数据**/
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
-        statisticsBo.setUserAddress(bo.getUserAddress());
-        statisticsBo.setStatisticalRole(true);//用户查询
+        TimePeriodStatisticsBo statisticsRoleBo = new TimePeriodStatisticsBo();
+        setStatisticalUserRole(statisticsRoleBo,bo);
+        Long poolTransactionTime = earnMapper.depositMinTimeVaultCreateTime(statisticsRoleBo);
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),poolTransactionTime);
+        setStatisticalUserRole(statisticsBo,bo);
+        Date timePeriodMinTime = earnMapper.vaultDepositMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         /**根据时间段查询存/取数据**/
         List<TimePeriodStatisticsVo> depositVos = earnMapper.vaultDeposit(statisticsBo);
         List<TimePeriodStatisticsVo> depositLtVos = earnMapper.vaultDepositLTTransactionTime(statisticsBo);
@@ -171,7 +177,10 @@ public class EarnServiceImpl implements EarnService {
         return resultData;
     }
 
-
+    private void setStatisticalUserRole(TimePeriodStatisticsBo statisticsBo,EarnTotalBo bo){
+        statisticsBo.setUserAddress(bo.getUserAddress());
+        statisticsBo.setStatisticalRole(true);//用户查询
+    }
     /**
      * 统计单个Vault池存入数据
      * @param bo
@@ -180,9 +189,13 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public List<TimePeriodStatisticsVo> totalDeposits(EarnTotalBo bo){
         /**获取时间段类型 时间段数据**/
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        Vault vault = getVaultId(bo.getVaultId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),vault.getTransactionTimeUnix());
         statisticsBo.setBusinessPoolId(bo.getVaultId());
         statisticsBo.setStatisticalRole(false);//vault池子查询
+        Date timePeriodMinTime = earnMapper.vaultDepositMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         /**根据时间段查询存/取数据**/
         List<TimePeriodStatisticsVo> depositVos = earnMapper.vaultDeposit(statisticsBo);
         List<TimePeriodStatisticsVo> depositLtVos = earnMapper.vaultDepositLTTransactionTime(statisticsBo);
@@ -193,6 +206,17 @@ public class EarnServiceImpl implements EarnService {
     }
 
 
+    private Vault getVaultId(String vaultId){
+        Vault vault = null;
+        LambdaQueryWrapper<Vault>  queryWrapper = Wrappers.<Vault>query().lambda();
+        queryWrapper.eq(Vault::getVaultId,vaultId);
+        List<Vault> list = earnMapper.selectList(queryWrapper);
+        if(list.size()>0){
+            vault = list.get(0);
+        }
+        return vault;
+    }
+
     /**
      * 统计单个Vault池APY
      * @param bo
@@ -201,14 +225,18 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public List<TimePeriodStatisticsVo> totalAPY(EarnTotalBo bo){
         List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType());
+        Vault vault = getVaultId(bo.getVaultId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),vault.getTransactionTimeUnix());
         statisticsBo.setBusinessPoolId(bo.getVaultId());
+        Date timePeriodMinTime = earnMapper.vaultAPYStatisticsMinTime(statisticsBo);
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
         List<TimePeriodStatisticsVo> aprVos = earnMapper.vaultAPYStatistics(statisticsBo);
         if(aprVos.size()>0){
             Map<String,TimePeriodStatisticsVo> dateUnitKeys = aprVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)-> v1));
-            List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek());
+            List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek(),TimePeriodUtil.getCreatePoolTimeHours(statisticsBo));
             /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(apr数据)**/
-            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo.getIsWeek(),resultData);
+            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo,resultData);
         }
         return resultData;
     }
@@ -234,7 +262,8 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public TimePeriodStatisticsGrowthVo vaultSharePrice(EarnTotalBo bo){
         TimePeriodStatisticsGrowthVo vo = new TimePeriodStatisticsGrowthVo();
-        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(1);
+        Vault vault = getVaultId(bo.getVaultId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(1,vault.getTransactionTimeUnix());
         statisticsBo.setBusinessPoolId(bo.getVaultId());
         List<TimePeriodStatisticsVo> sharePriceVos = earnMapper.vaultSharePriceLTTransactionTime(statisticsBo);
         List<GrowthStatisticsVo> growthData = new ArrayList<>();
