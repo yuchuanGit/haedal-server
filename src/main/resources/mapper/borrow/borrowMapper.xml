@@ -196,7 +196,7 @@
         SELECT userMarket.*,cc.feed_id  from (
         SELECT DATE_FORMAT( max( transaction_time ), '%Y-%m-%d %H:%i' ) AS transaction_time,
         DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,sum( assets ) AS val, market_id,
-        max(collateral_token_type) as coin_type FROM borrow_withdraw
+        max(loan_token_type) as coin_type FROM borrow_withdraw
         WHERE transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
         <choose>
             <when test="statisticalRole==true">
@@ -217,7 +217,7 @@
         FROM
         (
         SELECT
-        sum( assets ) AS val,market_id,max( collateral_token_type ) AS coin_type
+        sum( assets ) AS val,market_id,max( loan_token_type ) AS coin_type
         FROM borrow_withdraw
         WHERE transaction_time &lt;= #{start}
         <choose>
