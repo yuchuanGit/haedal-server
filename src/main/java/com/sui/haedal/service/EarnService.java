@@ -9,10 +9,17 @@ import java.util.List;
 public interface EarnService {
 
     /**
+     * 获取用户Vault权限
+     * @param userAddress
+     * @return
+     */
+    UserVaultPermissionVo userVaultPermission(String userAddress);
+
+    /**
      * earn vault列表
      * @return
      */
-    List<VaultVo> list();
+    List<VaultVo> list(String userAddress);
 
     /**
      * Vault详情

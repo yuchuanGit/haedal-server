@@ -4,7 +4,6 @@ import com.sui.haedal.common.R;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
 import com.sui.haedal.model.vo.*;
-import com.sui.haedal.service.BorrowService;
 import com.sui.haedal.service.EarnService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,10 +22,16 @@ public class EarnRest {
     @Autowired
     private EarnService service;
 
+    @GetMapping("/userVaultPermission")
+    @Operation(summary = "获取用户Vault权限", description = "获取用户Vault权限")
+    public R<UserVaultPermissionVo> userVaultPermission(@RequestParam String userAddress) {
+        return R.data(service.userVaultPermission(userAddress));
+    }
+
     @GetMapping("/list")
     @Operation(summary = "查询earn列表", description = "根据ID查询金库完整信息")
-    public R<List<VaultVo>> listQuery() {
-        return R.data(service.list());
+    public R<List<VaultVo>> listQuery(@RequestParam(required = false) String userAddress) {
+        return R.data(service.list(userAddress));
     }
 
     @GetMapping("/vaultDetail")

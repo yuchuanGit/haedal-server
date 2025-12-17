@@ -51,14 +51,42 @@ public class EarnServiceImpl implements EarnService {
 
     @Resource
     private HTokenConfig hTokenConfig;
+
+    /**
+     * 获取用户Vault权限
+     * @param userAddress
+     * @return
+     */
+    @Override
+    public UserVaultPermissionVo userVaultPermission(String userAddress){
+        UserVaultPermissionVo vo = new UserVaultPermissionVo();
+        List<Vault> list = earnMapper.selectList(Wrappers.<Vault>query().lambda());
+        List<String> curatorVaultAddress = new ArrayList<>();
+        List<String> guardianVaultAddress = new ArrayList<>();
+        for (Vault vault : list) {
+            if(userAddress.equals(vault.getCurator())){
+                curatorVaultAddress.add(vault.getVaultId());
+            }
+            if(userAddress.equals(vault.getGuardian())){
+                guardianVaultAddress.add(vault.getVaultId());
+            }
+        }
+        vo.setCuratorVaultAddress(curatorVaultAddress);
+        vo.setGuardianVaultAddress(guardianVaultAddress);
+        return vo;
+    }
     /**
      * earn vault列表
      * @return
      */
     @Override
-    public List<VaultVo> list(){
+    public List<VaultVo> list(String userAddress){
         List<VaultVo> vos = new ArrayList<>();
-        List<Vault> list = earnMapper.selectList(Wrappers.<Vault>query().lambda());
+        LambdaQueryWrapper<Vault> queryWrapper = Wrappers.<Vault>query().lambda();
+        if(userAddress!=null&& userAddress!=""){
+            queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getCurator,userAddress);
+        }
+        List<Vault> list = earnMapper.selectList(queryWrapper);
         List<StrategyVo> strategyVos = earnMapper.allVaultStrategy();
         List<VaultVo> vaultApyVos = earnMapper.vaultApy(null);
         List<VaultVo> allVaultNewCuratorVos = earnMapper.allVaultNewCurator();
