@@ -3,6 +3,7 @@ package com.sui.haedal.model.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -110,5 +111,16 @@ public class Vault implements Serializable {
      * 单次最小存款量
      */
     private String minDeposit;
+
+    /**
+     * Vault 管理费用
+     */
+    private String managementFeeBps;
+
+    /**
+     * Vault 绩效费用
+     */
+    private String performanceFeeBps;
+
 
 }

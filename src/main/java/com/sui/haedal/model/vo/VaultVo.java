@@ -174,6 +174,13 @@ public class VaultVo implements Serializable {
     @Schema(description = "vault最新收益")
     private String yieldEarned;
 
+
+    @Schema(description = "Vault 管理费用")
+    private String managementFeeBps;
+
+    @Schema(description = "Vault 绩效费用")
+    private String performanceFeeBps;
+
     @Schema(description = "分配不同borrow策略")
     private List<StrategyVo> strategyVos;
 
