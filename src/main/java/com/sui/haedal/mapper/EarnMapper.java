@@ -58,11 +58,25 @@ public interface EarnMapper extends BaseMapper<Vault> {
     List<TimePeriodStatisticsVo>  vaultDeposit(TimePeriodStatisticsBo bo);
 
     /**
+     *  earn 统计vault时间段tvl
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> vaultTvlTimePeriodStatistics(TimePeriodStatisticsBo bo);
+
+    /**
      * earn 统计vault时间段存入 最小时间
      * @param bo
      * @return
      */
     Date vaultDepositMinTime(TimePeriodStatisticsBo bo);
+
+    /**
+     *  earn 统计vault时间段存入 最小时间
+     * @param bo
+     * @return
+     */
+    Date vaultTvlMinTime(TimePeriodStatisticsBo bo);
 
     /**
      * 获取存入最小时间找到对应vault创建时间

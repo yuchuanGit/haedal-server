@@ -5,7 +5,15 @@
         SELECT vault_id from vault_set_allocation_cap where market_id=#{marketId} GROUP BY vault_id,market_id
     </select>
 
+    <select id="borrowAssetsRecordTimePeriodStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+         SELECT vtc.total_asset as val,groupLastTime.*,cc.coin_type,cc.feed_id FROM  (
+        SELECT DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,max(transaction_time) transaction_time,market_id
+        from borrow_assets_record  where market_id=#{businessPoolId} and transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
+        GROUP BY dateUnit) groupLastTime
+        inner join borrow_assets_record vtc on vtc.market_id=groupLastTime.market_id and vtc.transaction_time=groupLastTime.transaction_time
+        LEFT JOIN coin_config cc ON cc.coin_type = vtc.loan_token_type
 
+    </select>
     <select id="borrowTimePeriodStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT borrowTotal.*,  cc.coin_type, cc.feed_id FROM
         ( SELECT
@@ -40,6 +48,9 @@
         </choose>
     </select>
 
+    <select id="borrowAssetsRecordMinTime" resultType="date">
+        SELECT min(transaction_time) transaction_time from borrow_assets_record WHERE  market_id =#{businessPoolId} and transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+    </select>
     <select id="borrowTimePeriodStatisticsLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT
         borrowTotal.*,
@@ -122,6 +133,15 @@
         where supply_type =#{supplyType}  AND caller_address =#{userAddress}
         ));
     </select>
+
+    <select id="borrowTimePeriodSupplyAssetsRecord" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+         SELECT vtc.total_asset as val,groupLastTime.*,cc.coin_type,cc.feed_id FROM  (
+        SELECT DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,max(transaction_time) transaction_time,market_id
+        from borrow_supply_assets_record  where market_id=#{businessPoolId} and transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
+        GROUP BY dateUnit) groupLastTime
+        inner join borrow_supply_assets_record vtc on vtc.market_id=groupLastTime.market_id and vtc.transaction_time=groupLastTime.transaction_time
+        LEFT JOIN coin_config cc ON cc.coin_type = vtc.loan_token_type
+    </select>
     <select id="borrowTimePeriodStatisticsSupplyOrCollateral" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT userMarket.*,cc.feed_id from
         (SELECT DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i' ) AS transaction_time,
@@ -159,6 +179,11 @@
             </otherwise>
         </choose>
     </select>
+
+    <select id="borrowTimePeriodSupplyAssetsRecordMinTime" resultType="date">
+        SELECT min(transaction_time) transaction_time from borrow_supply_assets_record WHERE  market_id =#{businessPoolId} and transaction_time &gt;=#{start} and transaction_time &lt;=#{end}
+    </select>
+
 
     <select id="borrowTimePeriodStatisticsSupplyOrCollateralLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT

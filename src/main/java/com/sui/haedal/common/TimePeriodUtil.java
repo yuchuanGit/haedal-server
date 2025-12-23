@@ -1,6 +1,7 @@
 package com.sui.haedal.common;
 
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
+import com.sui.haedal.model.entity.Vault;
 import com.sui.haedal.model.enums.DecimalType;
 import com.sui.haedal.model.vo.*;
 import lombok.extern.slf4j.Slf4j;
@@ -14,10 +15,24 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
 public class TimePeriodUtil {
+
+    public static List<TimePeriodStatisticsVo> getTimePeriodData(TimePeriodStatisticsBo statisticsBo,Date timePeriodMinTime,List<TimePeriodStatisticsVo> tvlVos){
+        List<TimePeriodStatisticsVo> resultData = new ArrayList<>();
+        if(null==timePeriodMinTime) return new ArrayList<>();
+        statisticsBo.setTimePeriodMinTime(timePeriodMinTime);
+        Map<String,TimePeriodStatisticsVo> dateUnitKeys = tvlVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit, Function.identity(),(v1, v2)->v1));
+        List<TimePeriodStatisticsVo> virtualTimePeriodData = DateUtil.timePeriodDayGenerateNew(statisticsBo.getStartLD(),statisticsBo.getEndLD(),statisticsBo.getIsWeek(),TimePeriodUtil.getCreatePoolTimeHours(statisticsBo));
+        if(dateUnitKeys.size()>0){
+            /**虚拟时间数据匹配虚拟时间最近点dateUnitKeys(所有存/取数据)**/
+            TimePeriodUtil.virtualTimePeriodMatchValue(virtualTimePeriodData,dateUnitKeys,statisticsBo,resultData);
+        }
+        return resultData;
+    }
 
     public static List<TimePeriodStatisticsVo> getTimePeriodData(TimePeriodStatisticsBo statisticsBo,
                                                                  List<TimePeriodStatisticsVo> inputVos,List<TimePeriodStatisticsVo> lessThanInputVos,

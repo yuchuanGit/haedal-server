@@ -23,6 +23,13 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
     List<String> queryVaultAddress(String marketId);
 
     /**
+     * borrow借还净值记录时间段统计
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> borrowAssetsRecordTimePeriodStatistics(TimePeriodStatisticsBo bo);
+
+    /**
      * borrow借时间段统计
      * @param bo
      * @return
@@ -35,6 +42,13 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
      * @return
      */
     Date borrowTimePeriodMinTime(TimePeriodStatisticsBo bo);
+
+    /**
+     *  borrow借记录时间段统计 最小时间
+     * @param bo
+     * @return
+     */
+    Date borrowAssetsRecordMinTime(TimePeriodStatisticsBo bo);
 
     /**
      * borrow借时间段统计 小于TransactionTime
@@ -69,6 +83,13 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
      * @param bo
      * @return
      */
+    List<TimePeriodStatisticsVo> borrowTimePeriodSupplyAssetsRecord(TimePeriodStatisticsBo bo);
+
+    /**
+     * borrow时间段统计 存资产/存抵押
+     * @param bo
+     * @return
+     */
     List<TimePeriodStatisticsVo> borrowTimePeriodStatisticsSupplyOrCollateral(TimePeriodStatisticsBo bo);
 
     /**
@@ -77,6 +98,13 @@ public interface BorrowMapper extends BaseMapper<Borrow> {
      * @return
      */
     Date borrowTimePeriodSupplyOrCollateralMinTime(TimePeriodStatisticsBo bo);
+
+    /**
+     * borrow时间段统计 存资产记录最小时间
+     * @param bo
+     * @return
+     */
+    Date borrowTimePeriodSupplyAssetsRecordMinTime(TimePeriodStatisticsBo bo);
 
     /**
      *  borrow时间段统计小于TransactionTime 存资产/存抵押

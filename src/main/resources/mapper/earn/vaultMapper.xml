@@ -72,6 +72,19 @@
         </choose>
     </select>
 
+    <select id="vaultTvlMinTime" resultType="date">
+        SELECT min(transaction_time) minTime from vault_tvl_record WHERE vault_id =#{businessPoolId} and transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
+    </select>
+
+    <select id="vaultTvlTimePeriodStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT vtc.total_asset as val,groupLastTime.*,cc.coin_type,cc.feed_id FROM  (
+        SELECT DATE_FORMAT(transaction_time,#{mysqlDateFormat}) AS dateUnit,max(transaction_time) transaction_time,vault_id
+        from vault_tvl_record  where vault_id=#{businessPoolId} and transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}
+        GROUP BY dateUnit) groupLastTime
+        inner join vault_tvl_record vtc on vtc.vault_id=groupLastTime.vault_id and vtc.transaction_time=groupLastTime.transaction_time
+        LEFT JOIN coin_config cc ON cc.coin_type = vtc.asset_type
+    </select>
+
     <select id="vaultDeposit" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
         SELECT
         vaultDepositTotal.*,

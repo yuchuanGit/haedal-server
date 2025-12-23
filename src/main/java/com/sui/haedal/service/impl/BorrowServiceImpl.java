@@ -228,8 +228,8 @@ public class BorrowServiceImpl implements BorrowService {
      * @param bo
      * @return
      */
-    @Override
-    public List<TimePeriodStatisticsVo> borrowDetailSupplyStatistics(BorrowTotalBo bo){
+//    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailSupplyStatisticsOld(BorrowTotalBo bo){
         /**获取时间段类型 时间段数据**/
         Borrow borrow = getMarketId(bo.getMarketId());
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
@@ -245,6 +245,24 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> withdrawLtVos =  borrowMapper.borrowWithdrawLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos,false);
         return resultData;
+    }
+
+    /**
+     * borrow 资产存入统计
+     * @param bo
+     * @return
+     */
+    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailSupplyStatistics(BorrowTotalBo bo){
+        /**获取时间段类型 时间段数据**/
+        Borrow borrow = getMarketId(bo.getMarketId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
+        statisticsBo.setBusinessPoolId(bo.getMarketId());
+        Date timePeriodMinTime = borrowMapper.borrowTimePeriodSupplyAssetsRecordMinTime(statisticsBo);
+        List<TimePeriodStatisticsVo> supplyAssetsVos = borrowMapper.borrowTimePeriodSupplyAssetsRecord(statisticsBo);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,timePeriodMinTime,supplyAssetsVos);
+        return resultData;
+
     }
 
 
@@ -288,8 +306,8 @@ public class BorrowServiceImpl implements BorrowService {
      * @param bo
      * @return
      */
-    @Override
-    public List<TimePeriodStatisticsVo> borrowDetailStatistics(BorrowTotalBo bo){
+//    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailStatisticsOld(BorrowTotalBo bo){
         Borrow borrow = getMarketId(bo.getMarketId());
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
         statisticsBo.setBusinessPoolId(bo.getMarketId());
@@ -302,6 +320,23 @@ public class BorrowServiceImpl implements BorrowService {
         List<TimePeriodStatisticsVo> withdrawVos = borrowMapper.borrowRepayTimePeriodStatistics(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawLtVos =  borrowMapper.borrowRepayTimePeriodStatisticsLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,supplyVos,supplyLtVos,withdrawVos,withdrawLtVos,false);
+        return resultData;
+    }
+
+
+    /**
+     * borrow 借明细统计
+     * @param bo
+     * @return
+     */
+    @Override
+    public List<TimePeriodStatisticsVo> borrowDetailStatistics(BorrowTotalBo bo){
+        Borrow borrow = getMarketId(bo.getMarketId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),borrow.getTransactionTime());
+        statisticsBo.setBusinessPoolId(bo.getMarketId());
+        Date timePeriodMinTime = borrowMapper.borrowAssetsRecordMinTime(statisticsBo);
+        List<TimePeriodStatisticsVo> borrowAssetsVos = borrowMapper.borrowAssetsRecordTimePeriodStatistics(statisticsBo);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,timePeriodMinTime,borrowAssetsVos);
         return resultData;
     }
 

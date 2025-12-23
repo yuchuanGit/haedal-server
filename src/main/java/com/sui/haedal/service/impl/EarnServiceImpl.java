@@ -260,8 +260,8 @@ public class EarnServiceImpl implements EarnService {
      * @param bo
      * @return
      */
-    @Override
-    public List<TimePeriodStatisticsVo> totalDeposits(EarnTotalBo bo){
+
+    public List<TimePeriodStatisticsVo> totalDepositsOld(EarnTotalBo bo){
         /**获取时间段类型 时间段数据**/
         Vault vault = getVaultId(bo.getVaultId());
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),vault.getTransactionTimeUnix());
@@ -276,6 +276,18 @@ public class EarnServiceImpl implements EarnService {
         List<TimePeriodStatisticsVo> withdrawVos = earnMapper.vaultWithdraw(statisticsBo);
         List<TimePeriodStatisticsVo> withdrawLtVos = earnMapper.vaultWithdrawLTTransactionTime(statisticsBo);
         List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,depositVos,depositLtVos,withdrawVos,withdrawLtVos,false);
+        return resultData;
+    }
+
+    @Override
+    public List<TimePeriodStatisticsVo> totalDeposits(EarnTotalBo bo){
+        /**获取时间段类型 时间段数据**/
+        Vault vault = getVaultId(bo.getVaultId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(bo.getTimePeriodType(),vault.getTransactionTimeUnix());
+        statisticsBo.setBusinessPoolId(bo.getVaultId());
+        Date timePeriodMinTime = earnMapper.vaultTvlMinTime(statisticsBo);
+        List<TimePeriodStatisticsVo> tvlVos = earnMapper.vaultTvlTimePeriodStatistics(statisticsBo);
+        List<TimePeriodStatisticsVo> resultData = TimePeriodUtil.getTimePeriodData(statisticsBo,timePeriodMinTime,tvlVos);
         return resultData;
     }
 
