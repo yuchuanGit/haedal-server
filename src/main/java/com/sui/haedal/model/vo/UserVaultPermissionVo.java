@@ -12,6 +12,7 @@ import java.util.List;
 @Schema(title = "UserVaultPermissionVo结构", description = "用户vault权限")
 public class UserVaultPermissionVo {
 
+    private List<String> ownerVaultAddress;
     private List<String> curatorVaultAddress;
     private List<String> guardianVaultAddress;
 }

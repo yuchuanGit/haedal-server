@@ -19,7 +19,7 @@ public interface EarnService {
      * earn vault列表
      * @return
      */
-    List<VaultVo> list(String userAddress);
+    List<VaultVo> list(String userAddress,Integer roleType);
 
     /**
      * Vault详情

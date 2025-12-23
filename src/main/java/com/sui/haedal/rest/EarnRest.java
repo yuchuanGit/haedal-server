@@ -30,8 +30,9 @@ public class EarnRest {
 
     @GetMapping("/list")
     @Operation(summary = "查询earn列表", description = "根据ID查询金库完整信息")
-    public R<List<VaultVo>> listQuery(@RequestParam(required = false) String userAddress) {
-        return R.data(service.list(userAddress));
+    public R<List<VaultVo>> listQuery(@RequestParam(required = false) String userAddress,
+                                      @RequestParam(required = false) Integer roleType) {
+        return R.data(service.list(userAddress,roleType));
     }
 
     @GetMapping("/vaultDetail")

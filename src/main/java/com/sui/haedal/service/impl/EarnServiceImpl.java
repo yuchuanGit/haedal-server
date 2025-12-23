@@ -61,9 +61,13 @@ public class EarnServiceImpl implements EarnService {
     public UserVaultPermissionVo userVaultPermission(String userAddress){
         UserVaultPermissionVo vo = new UserVaultPermissionVo();
         List<Vault> list = earnMapper.selectList(Wrappers.<Vault>query().lambda());
+        List<String> ownerVaultAddress = new ArrayList<>();
         List<String> curatorVaultAddress = new ArrayList<>();
         List<String> guardianVaultAddress = new ArrayList<>();
         for (Vault vault : list) {
+            if(userAddress.equals(vault.getOwner())){
+                ownerVaultAddress.add(vault.getVaultId());
+            }
             if(userAddress.equals(vault.getCurator())){
                 curatorVaultAddress.add(vault.getVaultId());
             }
@@ -71,20 +75,43 @@ public class EarnServiceImpl implements EarnService {
                 guardianVaultAddress.add(vault.getVaultId());
             }
         }
+        vo.setOwnerVaultAddress(ownerVaultAddress);
         vo.setCuratorVaultAddress(curatorVaultAddress);
         vo.setGuardianVaultAddress(guardianVaultAddress);
         return vo;
     }
     /**
      * earn vault列表
+     * roleType=1 owner curator guardian
+     * roleType=2 owner curator
+     * roleType=3 owner guardian
+     * roleType=4 curator guardian
+     * roleType=5 owner
+     * roleType=6 curator
+     * roleType=7 guardian
      * @return
      */
     @Override
-    public List<VaultVo> list(String userAddress){
+    public List<VaultVo> list(String userAddress,Integer roleType){
         List<VaultVo> vos = new ArrayList<>();
         LambdaQueryWrapper<Vault> queryWrapper = Wrappers.<Vault>query().lambda();
-        if(userAddress!=null&& userAddress!=""){
-            queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getCurator,userAddress);
+        if(userAddress!=null&&roleType!=null&& userAddress!=""){
+            switch (roleType){
+                case 1:
+                    queryWrapper.eq(Vault::getOwner, userAddress).or().eq(Vault::getCurator, userAddress).or().eq(Vault::getGuardian, userAddress);
+                case 2:
+                    queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getCurator,userAddress);
+                case 3:
+                    queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getGuardian,userAddress);
+                case 4:
+                    queryWrapper.eq(Vault::getCurator,userAddress).or().eq(Vault::getGuardian,userAddress);
+                case 5:
+                    queryWrapper.eq(Vault::getOwner,userAddress);
+                case 6:
+                    queryWrapper.eq(Vault::getCurator,userAddress);
+                case 7:
+                    queryWrapper.eq(Vault::getGuardian,userAddress);
+            }
         }
         List<Vault> list = earnMapper.selectList(queryWrapper);
         List<StrategyVo> strategyVos = earnMapper.allVaultStrategy();
