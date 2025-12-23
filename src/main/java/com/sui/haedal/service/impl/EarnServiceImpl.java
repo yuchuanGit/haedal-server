@@ -99,18 +99,25 @@ public class EarnServiceImpl implements EarnService {
             switch (roleType){
                 case 1:
                     queryWrapper.eq(Vault::getOwner, userAddress).or().eq(Vault::getCurator, userAddress).or().eq(Vault::getGuardian, userAddress);
+                    break;
                 case 2:
                     queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getCurator,userAddress);
+                    break;
                 case 3:
                     queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getGuardian,userAddress);
+                    break;
                 case 4:
                     queryWrapper.eq(Vault::getCurator,userAddress).or().eq(Vault::getGuardian,userAddress);
+                    break;
                 case 5:
                     queryWrapper.eq(Vault::getOwner,userAddress);
+                    break;
                 case 6:
                     queryWrapper.eq(Vault::getCurator,userAddress);
+                    break;
                 case 7:
                     queryWrapper.eq(Vault::getGuardian,userAddress);
+                    break;
             }
         }
         List<Vault> list = earnMapper.selectList(queryWrapper);
