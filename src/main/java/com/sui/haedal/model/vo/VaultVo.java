@@ -68,6 +68,9 @@ public class VaultVo implements Serializable {
     @Schema(description = "质押代币类型")
     private String htokenType;
 
+    @Schema(description = "htoken精度")
+    private Integer htokenDecimals;
+
     /**
      * 摘要
      */
