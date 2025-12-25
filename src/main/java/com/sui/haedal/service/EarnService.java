@@ -1,12 +1,22 @@
 package com.sui.haedal.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
+import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
 import com.sui.haedal.model.vo.*;
 
 import java.util.List;
 
 public interface EarnService {
+
+
+    /**
+     * Vault存取分页查询
+     * @param queryBo
+     * @return
+     */
+    IPage<VaultDepositWithdrawVo> vaultDepositWithdrawPageQuery(VaultDepositWithdrawQueryBo queryBo);
 
     /**
      * 获取用户Vault权限

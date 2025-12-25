@@ -1,8 +1,10 @@
 package com.sui.haedal.rest;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sui.haedal.common.R;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
+import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.EarnService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,14 @@ public class EarnRest {
 
     @Autowired
     private EarnService service;
+
+
+    @PostMapping("/vaultDepositWithdrawPageQuery")
+    @Operation(summary = "Vault存取分页查询", description = "Vault存取分页查询")
+    public R<IPage<VaultDepositWithdrawVo>> vaultDepositWithdrawPageQuery(@RequestBody VaultDepositWithdrawQueryBo bo) {
+        return R.data(service.vaultDepositWithdrawPageQuery(bo));
+    }
+
 
     @GetMapping("/userVaultPermission")
     @Operation(summary = "获取用户Vault权限", description = "获取用户Vault权限")

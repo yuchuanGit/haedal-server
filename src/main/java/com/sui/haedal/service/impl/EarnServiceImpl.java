@@ -3,16 +3,20 @@ package com.sui.haedal.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Assert;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.sui.haedal.common.*;
+import com.sui.haedal.common.page.Condition;
 import com.sui.haedal.config.HTokenConfig;
 import com.sui.haedal.mapper.BorrowMapper;
 import com.sui.haedal.mapper.CoinConfigMapper;
 import com.sui.haedal.mapper.EarnMapper;
+import com.sui.haedal.mapper.VaultDepositWithdrawMapper;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
+import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
 import com.sui.haedal.model.entity.Vault;
@@ -52,6 +56,23 @@ public class EarnServiceImpl implements EarnService {
     @Resource
     private HTokenConfig hTokenConfig;
 
+    @Resource
+    private VaultDepositWithdrawMapper depositWithdrawMapper;
+
+
+
+    /**
+     * Vault存取分页查询
+     * @param queryBo
+     * @return
+     */
+    @Override
+    public IPage<VaultDepositWithdrawVo> vaultDepositWithdrawPageQuery(VaultDepositWithdrawQueryBo queryBo){
+        IPage<VaultDepositWithdrawVo> page = Condition.getPage(queryBo);
+        List<VaultDepositWithdrawVo>  records = depositWithdrawMapper.vaultDepositWithdrawPageQuery(page,queryBo);
+        page.setRecords(records);
+        return page;
+    }
     /**
      * 获取用户Vault权限
      * @param userAddress
@@ -198,8 +219,6 @@ public class EarnServiceImpl implements EarnService {
             }
             String htokenType = TimePeriodUtil.coinTokenTypeVal(vaultVo.getHtokenType());
             vaultVo.setHtokenDecimals(TimePeriodUtil.getCoinDecimal(htokenType));
-            //todo  yieldEarned
-            vaultVo.setYieldEarned("0");
         }
         return vaultVo;
     }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sui.haedal.mapper.VaultDepositWithdrawMapper">
+
+    <select id="vaultDepositWithdrawPageQuery" resultType="com.sui.haedal.model.vo.VaultDepositWithdrawVo">
+        select  * from vault_deposit_withdraw where 1=1
+        <if test="queryBo.vaultId!= null and  queryBo.vaultId!=''">
+            and vault_id=#{queryBo.vaultId}
+        </if>
+        <if test="queryBo.userAddress!= null and  queryBo.userAddress!=''">
+            and user=#{queryBo.userAddress}
+        </if>
+        order by transaction_time desc
+    </select>
+</mapper>
