@@ -26,8 +26,9 @@ public class BigDecimalUtil {
         }else if(DecimalType.MULTIPLY.getValue().equals(type)){
             result = bigDecimal.multiply(bigDecimal2);
         }else if(DecimalType.DIVIDE.getValue().equals(type)){
-            result = bigDecimal.divide(bigDecimal2,decimals);
+            result = bigDecimal.divide(bigDecimal2,decimals,roundingMode);
         }
         return result.setScale(decimals,roundingMode);
     }
+
 }

@@ -126,4 +126,11 @@ public interface EarnMapper extends BaseMapper<Vault> {
      * @return
      */
     List<TimePeriodStatisticsVo> vaultSharePriceLTTransactionTime(TimePeriodStatisticsBo bo);
+
+    /**
+     * earn 统计vault小于TransactionTime 收益
+     * @param bo
+     * @return
+     */
+    List<TimePeriodStatisticsVo> vaultYieldEarnedLTTransactionTime(TimePeriodStatisticsBo bo);
 }

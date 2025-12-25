@@ -339,8 +339,12 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public TimePeriodStatisticsGrowthVo yieldEarned(EarnTotalBo bo){
         TimePeriodStatisticsGrowthVo vo = new TimePeriodStatisticsGrowthVo();
-        //todo
-
+        Vault vault = getVaultId(bo.getVaultId());
+        TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(1,vault.getTransactionTimeUnix());
+        statisticsBo.setBusinessPoolId(bo.getVaultId());
+        List<TimePeriodStatisticsVo> yieldEarnedVos = earnMapper.vaultYieldEarnedLTTransactionTime(statisticsBo);
+        vo.setStatisticsData(yieldEarnedVos);
+        vo.setGrowthData(dayGrowthCalculate(yieldEarnedVos));
         return vo;
     }
 
@@ -356,10 +360,16 @@ public class EarnServiceImpl implements EarnService {
         TimePeriodStatisticsBo statisticsBo = TimePeriodUtil.getTimePeriodParameter(1,vault.getTransactionTimeUnix());
         statisticsBo.setBusinessPoolId(bo.getVaultId());
         List<TimePeriodStatisticsVo> sharePriceVos = earnMapper.vaultSharePriceLTTransactionTime(statisticsBo);
+        vo.setStatisticsData(sharePriceVos);
+        vo.setGrowthData(dayGrowthCalculate(sharePriceVos));
+        return vo;
+    }
+
+    private List<GrowthStatisticsVo> dayGrowthCalculate(List<TimePeriodStatisticsVo> vos){
         List<GrowthStatisticsVo> growthData = new ArrayList<>();
         List<Integer> dayGrowths = dayGrowthRules();
-        if(sharePriceVos.size()>0){
-            Map<String,TimePeriodStatisticsVo> dateUnitKeys = sharePriceVos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)->v1));
+        if(vos.size()>0){
+            Map<String,TimePeriodStatisticsVo> dateUnitKeys = vos.stream().collect(Collectors.toMap(TimePeriodStatisticsVo::getDateUnit,Function.identity(),(v1,v2)->v1));
             LocalDateTime now = LocalDateTime.now();
             String thatDayKey = DateUtil.dateFormat(new Date(),DateUtil.DATE_FORMAT_YMD);//当天日期
             TimePeriodStatisticsVo thatDayVo = dateUnitKeys.get(thatDayKey);
@@ -386,10 +396,9 @@ public class EarnServiceImpl implements EarnService {
                 }
             }
         }
-        vo.setStatisticsData(sharePriceVos);
-        vo.setGrowthData(growthData);
-        return vo;
+        return growthData;
     }
+
     private List<Integer> dayGrowthRules(){
         List<Integer> dayGrowths = new ArrayList<>();
         dayGrowths.add(1);

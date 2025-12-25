@@ -194,13 +194,19 @@
     </select>
 
     <select id="vaultAPYStatistics" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
-        SELECT
+        <!-- SELECT
         DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i' ) AS transaction_time,
         DATE_FORMAT(transaction_time, #{mysqlDateFormat}) AS dateUnit,
         max(apy) AS val
         FROM vault_apy
         WHERE  transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
-        GROUP BY dateUnit
+        GROUP BY dateUnit -->
+        SELECT groupLastTime.*,va.apy as val from (
+        SELECT max(transaction_time) AS transaction_time,
+        DATE_FORMAT(transaction_time, #{mysqlDateFormat}) AS dateUnit,vault_id
+        FROM vault_apy WHERE  transaction_time &gt;= #{start} AND transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
+        GROUP BY dateUnit) groupLastTime
+        inner join vault_apy va on va.vault_id=groupLastTime.vault_id and va.transaction_time=groupLastTime.transaction_time
     </select>
 
     <select id="vaultAPYStatisticsMinTime" resultType="date">
@@ -208,13 +214,21 @@
     </select>
 
     <select id="vaultSharePriceLTTransactionTime" resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
-         SELECT
-        DATE_FORMAT(max(transaction_time), '%Y-%m-%d %H:%i') AS transaction_time,
-        DATE_FORMAT(transaction_time, '%Y-%m-%d') AS dateUnit,
-        CAST(sum(exchange_rate) as CHAR) AS val
-        FROM vault_exchange_rate
-        WHERE  transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
-        GROUP BY dateUnit
+        SELECT groupLastTime.*,CAST(ver.exchange_rate as CHAR) AS val from (
+        SELECT 	max(transaction_time) AS transaction_time,
+        DATE_FORMAT(transaction_time, '%Y-%m-%d') AS dateUnit,vault_id  FROM vault_exchange_rate
+        WHERE transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
+        GROUP BY dateUnit) groupLastTime
+        inner join vault_exchange_rate ver on ver.vault_id=groupLastTime.vault_id and ver.transaction_time=groupLastTime.transaction_time
+    </select>
+
+    <select id="vaultYieldEarnedLTTransactionTime"  resultType="com.sui.haedal.model.vo.TimePeriodStatisticsVo">
+        SELECT groupLastTime.*,CAST(vyer.earned_asset as CHAR) AS val from (
+        SELECT 	max(transaction_time) AS transaction_time,
+        DATE_FORMAT(transaction_time, '%Y-%m-%d') AS dateUnit,vault_id  FROM vault_yield_earned_record
+        WHERE transaction_time &lt;= #{end}  and vault_id =#{businessPoolId}
+        GROUP BY dateUnit) groupLastTime
+        inner join vault_yield_earned_record vyer on vyer.vault_id=groupLastTime.vault_id and vyer.transaction_time=groupLastTime.transaction_time
     </select>
 
 </mapper>
