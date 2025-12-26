@@ -184,8 +184,6 @@ public class EarnServiceImpl implements EarnService {
             if(newAllocator!=null){
                 vo.setAllocator(newAllocator.getAllocator());
             }
-            String htokenType = TimePeriodUtil.coinTokenTypeVal(vo.getHtokenType());
-            vo.setHtokenDecimals(TimePeriodUtil.getCoinDecimal(htokenType));
             vos.add(vo);
         }
         return vos;
@@ -227,8 +225,6 @@ public class EarnServiceImpl implements EarnService {
             if(vaultApyVos.size()>0){
                 vaultVo.setApy(vaultApyVos.get(0).getApy()+"%");
             }
-            String htokenType = TimePeriodUtil.coinTokenTypeVal(vaultVo.getHtokenType());
-            vaultVo.setHtokenDecimals(TimePeriodUtil.getCoinDecimal(htokenType));
         }
         return vaultVo;
     }

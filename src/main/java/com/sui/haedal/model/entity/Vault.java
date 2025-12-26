@@ -63,6 +63,11 @@ public class Vault implements Serializable {
     private String assetType;
 
     /**
+     * htoken精度
+     */
+    private Integer htokenDecimals;
+
+    /**
      * 质押代币类型
      */
     private String htokenType;
