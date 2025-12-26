@@ -2,6 +2,7 @@ package com.sui.haedal.rest;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sui.haedal.common.R;
+import com.sui.haedal.model.bo.BorrowAssetsSupplyWithdrawQueryBo;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
 import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
@@ -23,6 +24,13 @@ public class EarnRest {
 
     @Autowired
     private EarnService service;
+
+
+    @PostMapping("/borrowAssetsSupplyWithdrawPageQuery")
+    @Operation(summary = "borrow资产存取分页查询", description = "borrow资产存取分页查询")
+    public R<IPage<BorrowAssetsSupplyWithdrawVo>> borrowAssetsSupplyWithdrawPageQuery(@RequestBody BorrowAssetsSupplyWithdrawQueryBo bo) {
+        return R.data(service.borrowAssetsSupplyWithdrawPageQuery(bo));
+    }
 
 
     @PostMapping("/vaultDepositWithdrawPageQuery")

@@ -9,14 +9,8 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.sui.haedal.common.*;
 import com.sui.haedal.common.page.Condition;
 import com.sui.haedal.config.HTokenConfig;
-import com.sui.haedal.mapper.BorrowMapper;
-import com.sui.haedal.mapper.CoinConfigMapper;
-import com.sui.haedal.mapper.EarnMapper;
-import com.sui.haedal.mapper.VaultDepositWithdrawMapper;
-import com.sui.haedal.model.bo.EarnTotalBo;
-import com.sui.haedal.model.bo.HTokenBo;
-import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
-import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
+import com.sui.haedal.mapper.*;
+import com.sui.haedal.model.bo.*;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
 import com.sui.haedal.model.entity.Vault;
@@ -59,7 +53,23 @@ public class EarnServiceImpl implements EarnService {
     @Resource
     private VaultDepositWithdrawMapper depositWithdrawMapper;
 
+    @Resource
+    private BorrowAssetsSupplyWithdrawMapper borrowAssetsSupplyWithdrawMapper;
 
+
+
+    /**
+     * borrow 资产存取分页查询
+     * @param queryBo
+     * @return
+     */
+    @Override
+    public IPage<BorrowAssetsSupplyWithdrawVo> borrowAssetsSupplyWithdrawPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo){
+        IPage<BorrowAssetsSupplyWithdrawVo> page = Condition.getPage(queryBo);
+        List<BorrowAssetsSupplyWithdrawVo>  records = borrowAssetsSupplyWithdrawMapper.borrowAssetsSupplyWithdrawPageQuery(page,queryBo);
+        page.setRecords(records);
+        return page;
+    }
 
     /**
      * Vault存取分页查询

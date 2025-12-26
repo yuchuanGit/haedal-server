@@ -1,6 +1,7 @@
 package com.sui.haedal.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.sui.haedal.model.bo.BorrowAssetsSupplyWithdrawQueryBo;
 import com.sui.haedal.model.bo.EarnTotalBo;
 import com.sui.haedal.model.bo.HTokenBo;
 import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
@@ -10,6 +11,13 @@ import java.util.List;
 
 public interface EarnService {
 
+
+    /**
+     * borrow 资产存取分页查询
+     * @param queryBo
+     * @return
+     */
+    IPage<BorrowAssetsSupplyWithdrawVo> borrowAssetsSupplyWithdrawPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo);
 
     /**
      * Vault存取分页查询

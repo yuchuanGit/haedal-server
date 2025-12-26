@@ -50,6 +50,6 @@ public class VaultDepositWithdrawVo implements Serializable {
     private Long transactionTimeUnix;
 
     @Schema(description = "数据链上交易时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "MMM dd,yyyy HH:mm",timezone = "UTC",locale = "en")
     private Date transactionTime;
 }

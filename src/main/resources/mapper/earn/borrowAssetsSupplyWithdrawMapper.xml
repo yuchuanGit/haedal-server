@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sui.haedal.mapper.BorrowAssetsSupplyWithdrawMapper">
+
+    <select id="borrowAssetsSupplyWithdrawPageQuery" resultType="com.sui.haedal.model.vo.BorrowAssetsSupplyWithdrawVo">
+        select  b.market_title,bsw.* from borrow_assets_supply_withdraw bsw
+        left join borrow b on b.market_id=bsw.market_id where 1=1
+        <if test="queryBo.vaultId!= null and  queryBo.vaultId!=''">
+            and bsw.on_behalf=#{queryBo.vaultId}
+        </if>
+        <if test="queryBo.marketId!= null and  queryBo.marketId!=''">
+            and bsw.market_id=#{queryBo.marketId}
+        </if>
+        <if test="queryBo.userAddress!= null and  queryBo.userAddress!=''">
+            and bsw.caller=#{queryBo.userAddress}
+        </if>
+        order by transaction_time desc
+    </select>
+</mapper>
