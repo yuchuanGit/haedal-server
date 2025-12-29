@@ -3,8 +3,11 @@
 <mapper namespace="com.sui.haedal.mapper.BorrowAssetsSupplyWithdrawMapper">
 
     <select id="borrowAssetsSupplyWithdrawPageQuery" resultType="com.sui.haedal.model.vo.BorrowAssetsSupplyWithdrawVo">
-        select  b.market_title,bsw.* from borrow_assets_supply_withdraw bsw
-        left join borrow b on b.market_id=bsw.market_id where 1=1
+        select  b.market_title,bsw.* from borrow_assets_operation_record bsw
+        left join borrow b on b.market_id=bsw.market_id where operation_type in
+        <foreach collection="queryBo.operationTypes" item="operationType" index="index" open="(" separator="," close=")">
+            #{operationType}
+        </foreach>
         <if test="queryBo.vaultId!= null and  queryBo.vaultId!=''">
             and bsw.on_behalf=#{queryBo.vaultId}
         </if>
