@@ -9,11 +9,11 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * borrow资产存取记录实体类
+ * borrow资产操作记录实体类
  */
 @Data
-@TableName("borrow_assets_supply_withdraw")
-public class BorrowAssetsSupplyWithdraw implements Serializable {
+@TableName("borrow_assets_operation_record")
+public class BorrowAssetsOperationRecord implements Serializable {
 
     /**
      * 主键id

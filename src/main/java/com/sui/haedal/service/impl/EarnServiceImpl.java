@@ -1,6 +1,5 @@
 package com.sui.haedal.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -11,11 +10,9 @@ import com.sui.haedal.common.page.Condition;
 import com.sui.haedal.config.HTokenConfig;
 import com.sui.haedal.mapper.*;
 import com.sui.haedal.model.bo.*;
-import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
 import com.sui.haedal.model.entity.Vault;
 import com.sui.haedal.model.enums.DecimalType;
-import com.sui.haedal.model.enums.HaedalOperationType;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.EarnService;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +51,7 @@ public class EarnServiceImpl implements EarnService {
     private VaultDepositWithdrawMapper depositWithdrawMapper;
 
     @Resource
-    private BorrowAssetsSupplyWithdrawMapper borrowAssetsSupplyWithdrawMapper;
+    private BorrowAssetsOperationRecordMapper borrowAssetsOperationRecordMapper;
 
 
 
@@ -64,13 +61,13 @@ public class EarnServiceImpl implements EarnService {
      * @return
      */
     @Override
-    public IPage<BorrowAssetsSupplyWithdrawVo> borrowAssetsSupplyWithdrawPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo){
-        IPage<BorrowAssetsSupplyWithdrawVo> page = Condition.getPage(queryBo);
+    public IPage<BorrowAssetsOperationRecordVo> borrowAssetsOperationRecordPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo){
+        IPage<BorrowAssetsOperationRecordVo> page = Condition.getPage(queryBo);
         queryBo.setOperationTypes(Arrays.asList("Deposit","Withdraw"));
         if(queryBo.getIsBorrow()){
             queryBo.setOperationTypes(Arrays.asList("Collateral","CollateralWithdraw","Borrow","Repay","Liquidation"));
         }
-        List<BorrowAssetsSupplyWithdrawVo>  records = borrowAssetsSupplyWithdrawMapper.borrowAssetsSupplyWithdrawPageQuery(page,queryBo);
+        List<BorrowAssetsOperationRecordVo>  records = borrowAssetsOperationRecordMapper.borrowAssetsOperationRecordPageQuery(page,queryBo);
         page.setRecords(records);
         return page;
     }

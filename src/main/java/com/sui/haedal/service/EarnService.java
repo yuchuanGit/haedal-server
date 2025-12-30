@@ -17,7 +17,7 @@ public interface EarnService {
      * @param queryBo
      * @return
      */
-    IPage<BorrowAssetsSupplyWithdrawVo> borrowAssetsSupplyWithdrawPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo);
+    IPage<BorrowAssetsOperationRecordVo> borrowAssetsOperationRecordPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo);
 
     /**
      * Vault存取分页查询

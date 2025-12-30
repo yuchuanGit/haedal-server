@@ -26,10 +26,10 @@ public class EarnRest {
     private EarnService service;
 
 
-    @PostMapping("/borrowAssetsSupplyWithdrawPageQuery")
-    @Operation(summary = "borrow资产存取分页查询", description = "borrow资产存取分页查询")
-    public R<IPage<BorrowAssetsSupplyWithdrawVo>> borrowAssetsSupplyWithdrawPageQuery(@RequestBody BorrowAssetsSupplyWithdrawQueryBo bo) {
-        return R.data(service.borrowAssetsSupplyWithdrawPageQuery(bo));
+    @PostMapping("/borrowAssetsOperationRecordPageQuery")
+    @Operation(summary = "borrow资产操作记录分页查询", description = "borrow资产操作记录分页查询")
+    public R<IPage<BorrowAssetsOperationRecordVo>> borrowAssetsOperationRecordPageQuery(@RequestBody BorrowAssetsSupplyWithdrawQueryBo bo) {
+        return R.data(service.borrowAssetsOperationRecordPageQuery(bo));
     }
 
 

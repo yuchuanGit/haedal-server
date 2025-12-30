@@ -9,10 +9,10 @@ import java.util.Date;
 
 @Data
 @Schema(title = "BorrowAssetsSupplyWithdrawVo结构", description = "borrow资产存取结构")
-public class BorrowAssetsSupplyWithdrawVo {
+public class BorrowAssetsOperationRecordVo {
     private Integer id;
 
-    @Schema(description = "存取类型 存:Deposit 取:Withdraw")
+    @Schema(description = "操作类型：存资产:Deposit 存抵押:Collateral 取资产:Withdraw 取抵押:CollateralWithdraw 借:Borrow 还：Repay 清算:Liquidation")
     private String operationType;
 
     @Schema(description = "市场id(borrow池)")
