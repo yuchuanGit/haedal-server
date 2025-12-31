@@ -25,6 +25,11 @@ public class EarnRest {
     @Autowired
     private EarnService service;
 
+    @GetMapping("/coinConfigList")
+    @Operation(summary = "查询coin列表", description = "查询coin列表")
+    public R<List<CoinConfigVo>> coinConfigList(@RequestParam(required = false) String coinType) {
+        return R.data(service.coinConfigList(coinType));
+    }
 
     @PostMapping("/borrowAssetsOperationRecordPageQuery")
     @Operation(summary = "borrow资产操作记录分页查询", description = "borrow资产操作记录分页查询")

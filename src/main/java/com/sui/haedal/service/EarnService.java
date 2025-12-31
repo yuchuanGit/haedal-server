@@ -13,6 +13,13 @@ public interface EarnService {
 
 
     /**
+     * 币种列表
+     * @param coinType
+     * @return
+     */
+    List<CoinConfigVo> coinConfigList(String coinType);
+
+    /**
      * borrow 资产存取分页查询
      * @param queryBo
      * @return

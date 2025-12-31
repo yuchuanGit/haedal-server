@@ -56,6 +56,28 @@ public class EarnServiceImpl implements EarnService {
 
 
     /**
+     * 币种列表
+     * @param coinType
+     * @return
+     */
+    @Override
+    public List<CoinConfigVo> coinConfigList(String coinType){
+        List<CoinConfigVo> data = new ArrayList<>();
+        LambdaQueryWrapper<CoinConfig> queryWrapper = Wrappers.<CoinConfig>query().lambda();
+        if(coinType!=null&&!"".equals(coinType)){
+            queryWrapper.eq(CoinConfig::getCoinType,coinType);
+        }
+        List<CoinConfig> coinList = coinConfigMapper.selectList(queryWrapper);
+        for (CoinConfig coinConfig : coinList) {
+            CoinConfigVo vo = new CoinConfigVo();
+            BeanUtils.copyProperties(coinConfig, vo);
+            data.add(vo);
+        }
+        return data;
+    }
+
+
+    /**
      * borrow 资产存取分页查询
      * @param queryBo
      * @return

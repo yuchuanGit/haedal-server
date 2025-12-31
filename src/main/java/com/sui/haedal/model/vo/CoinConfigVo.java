@@ -1,17 +1,18 @@
-package com.sui.haedal.model.entity;
+package com.sui.haedal.model.vo;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 币种配置表实体类
+ * 币种vo结构
  */
 
 @Data
-@TableName("coin_config")
-public class CoinConfig {
+@Schema(title = "CoinConfigVo结构", description = "币种vo结构")
+public class CoinConfigVo {
     /**
      * 主键ID
      */
