@@ -15,6 +15,7 @@ import com.sui.haedal.model.entity.Vault;
 import com.sui.haedal.model.enums.DecimalType;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.EarnService;
+import com.sui.haedal.service.FarmingPoolCreateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,9 @@ public class EarnServiceImpl implements EarnService {
 
     @Resource
     private BorrowAssetsOperationRecordMapper borrowAssetsOperationRecordMapper;
+
+    @Resource
+    private FarmingPoolCreateService farmingPoolCreateService;
 
 
 
@@ -183,6 +187,8 @@ public class EarnServiceImpl implements EarnService {
         Map<String,VaultVo> vaultApyMaps =vaultApyVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
         Map<String,VaultVo> newCuratorMaps =allVaultNewCuratorVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
         Map<String,VaultVo> newAllocatorMaps =allVaultNewAllocatorVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
+        Set<String> htokenTypes = new TreeSet();
+        Map<String,String> feedIds = new HashMap<>();//Asset(vault存入FeedId)+Reward(激励奖励FeedId)
         Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
         for (Vault vault : list) {
             VaultVo vo = new VaultVo();
@@ -195,8 +201,10 @@ public class EarnServiceImpl implements EarnService {
             setTvlCapacity(vo);//设置剩余容量
             CoinConfig coinConfig = coinConfigMap.get(vault.getAssetType());
             if(coinConfig!=null){
+                feedIds.put(coinConfig.getFeedId(),coinConfig.getFeedId());
                 vo.setAssetTypeFeedId(coinConfig.getFeedId());
                 vo.setAssetTypeFeedObjectId(coinConfig.getFeedObjectId());
+                vo.setAssetDecimals(coinConfig.getCoinDecimals());
             }
             vo.setStrategyVos(vaultMaps.get(vo.getVaultId()));
             VaultVo newCurator = newCuratorMaps.get(vault.getVaultId());
@@ -207,11 +215,30 @@ public class EarnServiceImpl implements EarnService {
             if(newAllocator!=null){
                 vo.setAllocator(newAllocator.getAllocator());
             }
+            htokenTypes.add(vo.getHtokenType());
             vos.add(vo);
+        }
+        Map<String,FarmingPoolCreateVo> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
+        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
+        Integer annualSeconds = 60*60*24*365;
+        for (VaultVo vo : vos) {
+            FarmingPoolCreateVo htokenReward = htokenRewardMap.get(vo.getHtokenType());
+            if(htokenReward!=null){
+                if(vo.getTvl()!=null&&!"".equals(vo.getTvl())){
+                    BigDecimal rewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,htokenReward.getRewardFeedId(),htokenReward.getRewardPerSecond(),htokenReward.getRewardCoinDecimals());
+                    BigDecimal tvlUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getAssetTypeFeedId(),vo.getTvl(),vo.getAssetDecimals());
+                    if(tvlUsdAmount.compareTo(BigDecimal.ZERO)==0){
+                        continue;
+                    }
+                    BigDecimal annualReward =  rewardUsdAmount.multiply(new BigDecimal(annualSeconds));
+                    BigDecimal farmingRewardApr = BigDecimalUtil.calculate(DecimalType.DIVIDE.getValue(),annualReward,
+                            tvlUsdAmount,2,RoundingMode.UP);
+                    vo.setFarmingRewardApr(farmingRewardApr);
+                }
+            }
         }
         return vos;
     }
-
 
     private void setTvlCapacity(VaultVo vo){
         if(vo.getSupplyCap()!=null){

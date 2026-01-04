@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -174,6 +175,9 @@ public class BorrowVo implements Serializable {
 
     @JsonProperty("LiqPenalty")
     private String liqPenalty;//清算者优惠比例
+
+    @Schema(description = "激励奖励apr")
+    private BigDecimal farmingRewardApr;
 
     @Schema(description = "borrow对应vaultAddress")
     private List<String> vaultAddress;

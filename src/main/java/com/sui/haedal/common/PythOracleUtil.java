@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,5 +75,25 @@ public class PythOracleUtil {
         }
 
         return feedPrices;
+    }
+
+    /**
+     * 币种usd计算
+     * @param coinPrice pyth最新价格
+     * @param feedId
+     * @param val 最小单位值
+     * @param coinDecimals 值精度
+     * @return
+     */
+   public static BigDecimal coinUsd(Map<String, PythCoinFeedPriceVo> coinPrice,String feedId,String val,Integer coinDecimals){
+        PythCoinFeedPriceVo pythCoinFeedPrice = coinPrice.get(feedId);
+        BigDecimal coinUsdAmount = new BigDecimal(0);
+        if(pythCoinFeedPrice!=null){
+            BigDecimal usdUnitPrice = TimePeriodUtil.feedIdUsdUnitPrice(pythCoinFeedPrice);// 计算FeedId对应USD单价
+            String convVal = TimePeriodUtil.scientificComputingConvertToDecimal(val);//科学计算转十进制
+            BigDecimal decimalsVal = new BigDecimal(convVal).divide(new BigDecimal(Math.pow(10, coinDecimals)));//最小单位值除以精度
+            coinUsdAmount = decimalsVal.multiply(usdUnitPrice);// 计算USD
+        }
+        return coinUsdAmount;
     }
 }

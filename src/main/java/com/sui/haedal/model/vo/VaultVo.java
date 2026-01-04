@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -131,6 +132,9 @@ public class VaultVo implements Serializable {
     @Schema(description = "assetTypeFeedObjectId")
     private String assetTypeFeedObjectId;
 
+    @Schema(description = "存入币种精度")
+    private Integer assetTypeDecimals;
+
 
     /**
      * 抵押代币类型
@@ -182,6 +186,9 @@ public class VaultVo implements Serializable {
 
     @Schema(description = "Vault 绩效费用")
     private String performanceFeeBps;
+
+    @Schema(description = "激励奖励apr")
+    private BigDecimal farmingRewardApr;
 
     @Schema(description = "分配不同borrow策略")
     private List<StrategyVo> strategyVos;

@@ -3,6 +3,7 @@ package com.sui.haedal.service.impl;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.sui.haedal.common.BigDecimalUtil;
 import com.sui.haedal.common.DateUtil;
 import com.sui.haedal.common.PythOracleUtil;
 import com.sui.haedal.common.TimePeriodUtil;
@@ -13,15 +14,18 @@ import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
+import com.sui.haedal.model.enums.DecimalType;
 import com.sui.haedal.model.enums.HaedalOperationType;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.BorrowService;
+import com.sui.haedal.service.FarmingPoolCreateService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -41,6 +45,10 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Resource
     private CoinConfigMapper coinConfigMapper;
+
+    @Resource
+    private FarmingPoolCreateService farmingPoolCreateService;
+
 
 
     @Override
@@ -211,8 +219,9 @@ public class BorrowServiceImpl implements BorrowService {
             vo.setPair(collateralCoinType + "/" + loanCoinType);
             vo.setCollateralCoinDecimals(TimePeriodUtil.getCoinDecimal(collateralCoinType));
             vo.setLoanCoinDecimals(TimePeriodUtil.getCoinDecimal(loanCoinType));
-            List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
-            Map<String,CoinConfig> coinConfigMap = coinList.stream().collect(Collectors.toMap(CoinConfig::getCoinType,Function.identity(),(v1,v2)->v1));
+//            List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
+//            Map<String,CoinConfig> coinConfigMap = coinList.stream().collect(Collectors.toMap(CoinConfig::getCoinType,Function.identity(),(v1,v2)->v1));
+            Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
             setBorrowFeed(vo,coinConfigMap);
             //todo
             vo.setLiqPenalty("3%");
@@ -347,10 +356,12 @@ public class BorrowServiceImpl implements BorrowService {
         if (collaCoin != null) {
             vo.setCollateralFeedId(collaCoin.getFeedId());
             vo.setCollateralFeedObjectId(collaCoin.getFeedObjectId());
+            vo.setCollateralCoinDecimals(collaCoin.getCoinDecimals());
         }
         if (loanCoin != null) {
             vo.setLoanFeedId(loanCoin.getFeedId());
             vo.setLoanFeedObjectId(loanCoin.getFeedObjectId());
+            vo.setLoanCoinDecimals(loanCoin.getCoinDecimals());
         }
 
     }
@@ -374,9 +385,12 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     public List<BorrowVo> queryList() {
         List<Borrow> list = borrowMapper.selectList(Wrappers.<Borrow>query().lambda());
-        List<CoinConfig> coinConfigList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
-        Map<String,CoinConfig> coinConfigMap = coinConfigList.stream().collect(Collectors.toMap(CoinConfig::getCoinType, Function.identity(),(v1, v2)->  v1));
-        List<BorrowVo> results = new ArrayList<>();
+//        List<CoinConfig> coinConfigList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
+//        Map<String,CoinConfig> coinConfigMap = coinConfigList.stream().collect(Collectors.toMap(CoinConfig::getCoinType, Function.identity(),(v1, v2)->  v1));
+        Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
+                List<BorrowVo> results = new ArrayList<>();
+        Set<String> marketIds = new TreeSet();
+        Map<String,String> feedIds = new HashMap<>();//Asset(vault存入FeedId)+Reward(激励奖励FeedId)
         for (Borrow borrow : list) {
             BorrowVo vo = new BorrowVo();
             BeanUtils.copyProperties(borrow, vo);
@@ -388,9 +402,37 @@ public class BorrowServiceImpl implements BorrowService {
             setBorrowFeed(vo,coinConfigMap);
             vo.setLltv(ltvConvPercentage(vo.getLltv()));
             vo.setLtv(ltvConvPercentage(vo.getLtv()));
+            feedIds.put(vo.getLoanFeedId(),vo.getLoanFeedId());
+            marketIds.add(vo.getMarketId());
             results.add(vo);
         }
+
+        Map<String,FarmingPoolCreateVo> poolRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
+        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
+        Integer annualSeconds = 60*60*24*365;
+        for (BorrowVo vo : results) {
+            FarmingPoolCreateVo marketReward = poolRewardMap.get(vo.getMarketId());
+            if(marketReward!=null){
+                if(vo.getTotalLoanAmount()!=null&&!"".equals(vo.getTotalLoanAmount())){
+                    BigDecimal rewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,marketReward.getRewardFeedId(),marketReward.getRewardPerSecond(),marketReward.getRewardCoinDecimals());
+                    BigDecimal loanUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getLoanFeedId(),vo.getTotalLoanAmount(),vo.getLoanCoinDecimals());
+                    if(loanUsdAmount.compareTo(BigDecimal.ZERO)==0){
+                        continue;
+                    }
+                    BigDecimal annualReward =  rewardUsdAmount.multiply(new BigDecimal(annualSeconds));
+                    BigDecimal farmingRewardApr = BigDecimalUtil.calculate(DecimalType.DIVIDE.getValue(),annualReward,
+                            loanUsdAmount,2, RoundingMode.UP);
+                    vo.setFarmingRewardApr(farmingRewardApr);
+                }
+
+            }
+        }
         return results;
+    }
+
+    private Map<String,CoinConfig> getCoinConfigMap(){
+        List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
+        return coinList.stream().collect(Collectors.toMap(CoinConfig::getCoinType, Function.identity(),(v1, v2)->v1));
     }
 
     private void dateSupplyMaps(List<UserTotalCollateralVo> collateralSupplyVos,Map<String, PythCoinFeedPriceVo> coinPrice,Map<String,BorrowRateLineVo> dateSupplyMaps){
