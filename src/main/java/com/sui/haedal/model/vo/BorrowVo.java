@@ -176,6 +176,9 @@ public class BorrowVo implements Serializable {
     @JsonProperty("LiqPenalty")
     private String liqPenalty;//清算者优惠比例
 
+    @Schema(description = "激励奖励池id")
+    private String farmingPoolId;
+
     @Schema(description = "激励奖励apr")
     private BigDecimal farmingRewardApr;
 

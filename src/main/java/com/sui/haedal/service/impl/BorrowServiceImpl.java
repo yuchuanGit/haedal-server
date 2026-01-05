@@ -219,14 +219,20 @@ public class BorrowServiceImpl implements BorrowService {
             vo.setPair(collateralCoinType + "/" + loanCoinType);
             vo.setCollateralCoinDecimals(TimePeriodUtil.getCoinDecimal(collateralCoinType));
             vo.setLoanCoinDecimals(TimePeriodUtil.getCoinDecimal(loanCoinType));
-//            List<CoinConfig> coinList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
-//            Map<String,CoinConfig> coinConfigMap = coinList.stream().collect(Collectors.toMap(CoinConfig::getCoinType,Function.identity(),(v1,v2)->v1));
             Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
             setBorrowFeed(vo,coinConfigMap);
             //todo
             vo.setLiqPenalty("3%");
             vo.setVaultAddress(borrowMapper.queryVaultAddress(vo.getMarketId()));
-
+            Set<String> marketIds = new TreeSet();
+            marketIds.add(vo.getMarketId());
+            Map<String,String> feedIds = new HashMap<>();//Asset(vault存入FeedId)+Reward(激励奖励FeedId)
+            feedIds.put(vo.getLoanFeedId(),vo.getLoanFeedId());
+            Map<String,FarmingPoolCreateVo> marketRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
+            FarmingPoolCreateVo marketReward = marketRewardMap.get(vo.getMarketId());
+            if(marketReward!=null){
+                vo.setFarmingPoolId(marketReward.getPoolId());
+            }
         }
         return vo;
     }
@@ -413,6 +419,7 @@ public class BorrowServiceImpl implements BorrowService {
         for (BorrowVo vo : results) {
             FarmingPoolCreateVo marketReward = poolRewardMap.get(vo.getMarketId());
             if(marketReward!=null){
+                vo.setFarmingPoolId(marketReward.getPoolId());
                 if(vo.getTotalLoanAmount()!=null&&!"".equals(vo.getTotalLoanAmount())){
                     BigDecimal rewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,marketReward.getRewardFeedId(),marketReward.getRewardPerSecond(),marketReward.getRewardCoinDecimals());
                     BigDecimal loanUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getLoanFeedId(),vo.getTotalLoanAmount(),vo.getLoanCoinDecimals());

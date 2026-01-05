@@ -224,6 +224,7 @@ public class EarnServiceImpl implements EarnService {
         for (VaultVo vo : vos) {
             FarmingPoolCreateVo htokenReward = htokenRewardMap.get(vo.getHtokenType());
             if(htokenReward!=null){
+                vo.setFarmingPoolId(htokenReward.getPoolId());
                 if(vo.getTvl()!=null&&!"".equals(vo.getTvl())){
                     BigDecimal rewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,htokenReward.getRewardFeedId(),htokenReward.getRewardPerSecond(),htokenReward.getRewardCoinDecimals());
                     BigDecimal tvlUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getAssetTypeFeedId(),vo.getTvl(),vo.getAssetDecimals());
@@ -261,13 +262,21 @@ public class EarnServiceImpl implements EarnService {
         List<VaultVo> list = earnMapper.vaultDetail(vaultId);
         if(list.size()>0){
             vaultVo = list.get(0);
+            Set<String> htokenTypes = new TreeSet();
+            htokenTypes.add(vaultVo.getHtokenType());
+            Map<String,String> feedIds = new HashMap<>();//Asset(vault存入FeedId)+Reward(激励奖励FeedId)
             Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
             CoinConfig coinConfig = coinConfigMap.get(vaultVo.getAssetType());
             if(coinConfig!=null){
                 vaultVo.setAssetTypeFeedId(coinConfig.getFeedId());
                 vaultVo.setAssetTypeFeedObjectId(coinConfig.getFeedObjectId());
+                feedIds.put(coinConfig.getFeedId(),coinConfig.getFeedId());
             }
-
+            Map<String,FarmingPoolCreateVo> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
+            FarmingPoolCreateVo htokenReward = htokenRewardMap.get(vaultVo.getHtokenType());
+            if(htokenReward!=null){
+                vaultVo.setFarmingPoolId(htokenReward.getPoolId());
+            }
             vaultVo.setTvl(vaultVo.getTotalAsset());
             vaultVo.setTvlCapacity("0");
             setTvlCapacity(vaultVo);//设置剩余容量

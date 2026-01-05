@@ -187,6 +187,9 @@ public class VaultVo implements Serializable {
     @Schema(description = "Vault 绩效费用")
     private String performanceFeeBps;
 
+    @Schema(description = "激励奖励池id")
+    private String farmingPoolId;
+
     @Schema(description = "激励奖励apr")
     private BigDecimal farmingRewardApr;
 
