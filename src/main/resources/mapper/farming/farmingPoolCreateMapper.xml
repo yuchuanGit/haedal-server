@@ -4,10 +4,7 @@
 
     <select id="farmingPoolRewardPerSecond" resultType="com.sui.haedal.model.vo.FarmingPoolCreateVo">
         select ppc.*,newprca.reward_per_second,newprca.reward_token_type,cc.feed_id reward_feed_id,cc.coin_decimals reward_coin_decimals from farming_pool_create ppc
-        LEFT JOIN
-        (SELECT prca.* from farming_reward_config_add prca
-        INNER JOIN (SELECT pool_id,max(transaction_time) transaction_time from farming_reward_config_add GROUP BY pool_id) lastPool on
-        lastPool.pool_id=prca.pool_id and lastPool.transaction_time=prca.transaction_time) newprca on newprca.pool_id=ppc.pool_id
+        LEFT JOIN farming_reward_config_new newprca on newprca.pool_id=ppc.pool_id
         left JOIN  coin_config cc on cc.coin_type=newprca.reward_token_type
         where 1=1
         <if test="htokenTypes != null and htokenTypes.size() >0 ">

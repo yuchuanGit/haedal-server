@@ -11,11 +11,29 @@ public class StrategyVo {
     @Schema(description = "vault address")
     private String vaultId;
 
+    @Schema(description = "vault tvl")
+    private String vaultTvl;
+
+    @Schema(description = "borrow名称")
+    private String marketTitle;
+
+    @Schema(description = "borrow总净资产")
+    private String totalSupplyAmount;
+
     @Schema(description = "borrow抵押币种")
     private String collateralTokenType;
 
     @Schema(description = "borrow贷款币种")
     private String loanTokenType;
+
+    @Schema(description = "borrow贷款币种FeedId")
+    private String loanFeedId;
+
+    @Schema(description = "borrow贷款币种FeedObjectId")
+    private String loanFeedObjectId;
+
+    @Schema(description = "borrow贷款币种精度")
+    private String loanCoinDecimals;
 
     @Schema(description = "分配borrow数量")
     private String cap;
