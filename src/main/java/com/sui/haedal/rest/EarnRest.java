@@ -40,7 +40,7 @@ public class EarnRest {
 
     @PostMapping("/vaultDepositWithdrawPageQuery")
     @Operation(summary = "Vault存取分页查询", description = "Vault存取分页查询")
-    public R<IPage<VaultDepositWithdrawVo>> vaultDepositWithdrawPageQuery(@RequestBody VaultDepositWithdrawQueryBo bo) {
+    public R<IPage<VaultDepositWithdrawVo>> vaultDepositWithdrawPageQuery(@RequestBody  @Valid VaultDepositWithdrawQueryBo bo) {
         return R.data(service.vaultDepositWithdrawPageQuery(bo));
     }
 

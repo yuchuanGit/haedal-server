@@ -3,7 +3,11 @@
 <mapper namespace="com.sui.haedal.mapper.VaultDepositWithdrawMapper">
 
     <select id="vaultDepositWithdrawPageQuery" resultType="com.sui.haedal.model.vo.VaultDepositWithdrawVo">
-        select  * from vault_deposit_withdraw where 1=1
+        select  * from vault_deposit_withdraw where  operation_type in
+        <foreach collection="queryBo.operationTypes" item="operationType" index="index" open="(" separator="," close=")">
+            #{operationType}
+        </foreach>
+
         <if test="queryBo.vaultId!= null and  queryBo.vaultId!=''">
             and vault_id=#{queryBo.vaultId}
         </if>
