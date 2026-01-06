@@ -6,6 +6,7 @@ import com.sui.haedal.model.entity.Vault;
 import com.sui.haedal.model.vo.StrategyVo;
 import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
 import com.sui.haedal.model.vo.VaultVo;
+import com.sui.haedal.model.vo.VaultYieldVo;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.Date;
@@ -14,6 +15,12 @@ import java.util.List;
 @Mapper
 public interface EarnMapper extends BaseMapper<Vault> {
 
+
+    /**
+     * 所有Vault收益
+     * @return
+     */
+    List<VaultYieldVo> allVaultYield();
 
     /**
      * Vault apy查询

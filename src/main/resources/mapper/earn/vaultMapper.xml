@@ -2,6 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sui.haedal.mapper.EarnMapper">
 
+    <select id="allVaultYield" resultType="com.sui.haedal.model.vo.VaultYieldVo">
+        SELECT v.vault_id,v.asset_type,cc.feed_id asset_type_feed_id,cc.coin_decimals asset_type_decimals,y.earned_asset,y.transaction_time from vault v
+        inner join
+        (SELECT vault_id,earned_asset,transaction_time from vault_yield_earned_record where  earned_asset>0 and transaction_time&gt;=DATE_SUB(NOW(), INTERVAL 1 MINUTE) and transaction_time&lt;=NOW()) y on y.vault_id=v.vault_id
+        left join coin_config cc on cc.coin_type=v.asset_type
+    </select>
     <select id="vaultApy" resultType="com.sui.haedal.model.vo.VaultVo">
         SELECT vault_id,MAX(transaction_time) transaction_time,ANY_VALUE(apy) apy from vault_apy
          <if test="vaultId!=null and vaultId!=''">

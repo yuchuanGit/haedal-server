@@ -60,6 +60,24 @@ public class EarnServiceImpl implements EarnService {
 
 
     /**
+     * 获取所有vault统计合计
+     * @return
+     */
+    @Override
+    public VaultTotalVo getAllVaultTotal(){
+        VaultTotalVo vo = new VaultTotalVo();
+        List<VaultYieldVo> vaultYieldVos = earnMapper.allVaultYield();
+        Map<String,String> feedIds = vaultYieldVos.stream().collect(Collectors.toMap(VaultYieldVo::getAssetTypeFeedId,VaultYieldVo::getAssetTypeFeedId,(v1,v2)->v1));
+        Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
+        BigDecimal allVaultYieldUsdAmount = new BigDecimal(0.00);
+        for (VaultYieldVo vaultYieldVo : vaultYieldVos) {
+            BigDecimal vaultYieldUsdAmount = PythOracleUtil.coinUsd(coinPrice,vaultYieldVo.getAssetTypeFeedId(),vaultYieldVo.getEarnedAsset(),vaultYieldVo.getAssetTypeDecimals());
+            allVaultYieldUsdAmount = allVaultYieldUsdAmount.add(vaultYieldUsdAmount);
+        }
+        vo.setAllVaultYieldUsdAmount(allVaultYieldUsdAmount.toString());
+       return vo;
+    }
+    /**
      * 币种列表
      * @param coinType
      * @return

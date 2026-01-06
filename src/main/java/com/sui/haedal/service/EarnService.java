@@ -13,6 +13,12 @@ public interface EarnService {
 
 
     /**
+     * 获取所有vault统计合计
+     * @return
+     */
+    VaultTotalVo getAllVaultTotal();
+
+    /**
      * 币种列表
      * @param coinType
      * @return

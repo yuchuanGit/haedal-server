@@ -25,6 +25,13 @@ public class EarnRest {
     @Autowired
     private EarnService service;
 
+
+    @GetMapping("/getAllVaultTotal")
+    @Operation(summary = "查询所有Vault统计", description = "查询所有Vault统计")
+    public R<VaultTotalVo> getAllVaultTotal() {
+        return R.data(service.getAllVaultTotal());
+    }
+
     @GetMapping("/coinConfigList")
     @Operation(summary = "查询coin列表", description = "查询coin列表")
     public R<List<CoinConfigVo>> coinConfigList(@RequestParam(required = false) String coinType) {
