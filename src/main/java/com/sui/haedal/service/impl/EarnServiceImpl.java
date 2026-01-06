@@ -89,10 +89,6 @@ public class EarnServiceImpl implements EarnService {
     @Override
     public IPage<BorrowAssetsOperationRecordVo> borrowAssetsOperationRecordPageQuery(BorrowAssetsSupplyWithdrawQueryBo queryBo){
         IPage<BorrowAssetsOperationRecordVo> page = Condition.getPage(queryBo);
-        queryBo.setOperationTypes(Arrays.asList("Deposit","Withdraw"));
-        if(queryBo.getIsBorrow()){
-            queryBo.setOperationTypes(Arrays.asList("Collateral","CollateralWithdraw","Borrow","Repay","Liquidation"));
-        }
         List<BorrowAssetsOperationRecordVo>  records = borrowAssetsOperationRecordMapper.borrowAssetsOperationRecordPageQuery(page,queryBo);
         page.setRecords(records);
         return page;
