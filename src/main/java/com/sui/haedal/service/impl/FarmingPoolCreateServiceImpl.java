@@ -36,20 +36,27 @@ public class FarmingPoolCreateServiceImpl implements FarmingPoolCreateService {
     @Override
     public Map<String, List<FarmingPoolCreateVo>> farmingPoolCreateReward(Set<String> condition, Boolean conditionType, Map<String,String> rewardFeedIds){
         FarmingPoolCreateBo bo = new FarmingPoolCreateBo();
-        bo.setHtokenTypes(condition);
         if(conditionType){
             bo.setMarketIds(condition);
+        }else{
+            bo.setHtokenTypes(condition);
         }
         List<FarmingPoolCreateVo> farmingPoolRewards = farmingPoolCreateMapper.farmingPoolRewardPerSecond(bo);
         Map<String,List<FarmingPoolCreateVo>> htokenRewardMap = new HashMap<>();
         for (FarmingPoolCreateVo farmingPoolReward : farmingPoolRewards) {
-            rewardFeedIds.put(farmingPoolReward.getRewardFeedId(),farmingPoolReward.getRewardFeedId());
-            List<FarmingPoolCreateVo> rewardList = htokenRewardMap.get(farmingPoolReward.getStakeTokenType());
+            if(farmingPoolReward.getRewardFeedId()!=null){
+                rewardFeedIds.put(farmingPoolReward.getRewardFeedId(),farmingPoolReward.getRewardFeedId());
+            }
+            String key = farmingPoolReward.getStakeTokenType();
+            if(conditionType){
+                key = farmingPoolReward.getMarketId();
+            }
+            List<FarmingPoolCreateVo> rewardList = htokenRewardMap.get(key);
             if(null==rewardList){
                 rewardList = new ArrayList<>();
             }
             rewardList.add(farmingPoolReward);
-            htokenRewardMap.put(farmingPoolReward.getStakeTokenType(),rewardList);
+            htokenRewardMap.put(key,rewardList);
         }
         return htokenRewardMap;
     }

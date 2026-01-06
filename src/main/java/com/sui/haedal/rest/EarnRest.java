@@ -33,7 +33,7 @@ public class EarnRest {
 
     @PostMapping("/borrowAssetsOperationRecordPageQuery")
     @Operation(summary = "borrow资产操作记录分页查询", description = "borrow资产操作记录分页查询")
-    public R<IPage<BorrowAssetsOperationRecordVo>> borrowAssetsOperationRecordPageQuery(@RequestBody BorrowAssetsSupplyWithdrawQueryBo bo) {
+    public R<IPage<BorrowAssetsOperationRecordVo>> borrowAssetsOperationRecordPageQuery(@RequestBody @Valid BorrowAssetsSupplyWithdrawQueryBo bo) {
         return R.data(service.borrowAssetsOperationRecordPageQuery(bo));
     }
 
