@@ -196,4 +196,8 @@ public class VaultVo implements Serializable {
     @Schema(description = "分配不同borrow策略")
     private List<StrategyVo> strategyVos;
 
+    @Schema(description = "激励不同币种天奖励列表")
+    private List<FarmingDayRewardVo> dayRewards;
+
+
 }

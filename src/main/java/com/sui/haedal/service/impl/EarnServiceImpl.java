@@ -218,23 +218,23 @@ public class EarnServiceImpl implements EarnService {
             htokenTypes.add(vo.getHtokenType());
             vos.add(vo);
         }
-        Map<String,FarmingPoolCreateVo> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
+        Map<String,List<FarmingPoolCreateVo>> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
-        Integer annualSeconds = 60*60*24*365;
         for (VaultVo vo : vos) {
-            FarmingPoolCreateVo htokenReward = htokenRewardMap.get(vo.getHtokenType());
-            if(htokenReward!=null){
-                vo.setFarmingPoolId(htokenReward.getPoolId());
+            List<FarmingPoolCreateVo> htokenRewardList = htokenRewardMap.get(vo.getHtokenType());
+            if(htokenRewardList!=null&&htokenRewardList.size()>0){
                 if(vo.getTvl()!=null&&!"".equals(vo.getTvl())){
-                    BigDecimal rewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,htokenReward.getRewardFeedId(),htokenReward.getRewardPerSecond(),htokenReward.getRewardCoinDecimals());
                     BigDecimal tvlUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getAssetTypeFeedId(),vo.getTvl(),vo.getAssetDecimals());
                     if(tvlUsdAmount.compareTo(BigDecimal.ZERO)==0){
                         continue;
                     }
-                    BigDecimal annualReward =  rewardUsdAmount.multiply(new BigDecimal(annualSeconds));
+                    List<FarmingDayRewardVo> dayRewards = new ArrayList<>();
+                    BigDecimal annualReward = farmingPoolCreateService.farmingRewardCalculate(coinPrice,htokenRewardList,dayRewards);
                     BigDecimal farmingRewardApr = BigDecimalUtil.calculate(DecimalType.DIVIDE.getValue(),annualReward,
-                            tvlUsdAmount,2,RoundingMode.UP);
+                            tvlUsdAmount,2, RoundingMode.UP);
+                    vo.setFarmingPoolId(htokenRewardList.get(0).getPoolId());
                     vo.setFarmingRewardApr(farmingRewardApr);
+                    vo.setDayRewards(dayRewards);
                 }
             }
         }
@@ -272,10 +272,10 @@ public class EarnServiceImpl implements EarnService {
                 vaultVo.setAssetTypeFeedObjectId(coinConfig.getFeedObjectId());
                 feedIds.put(coinConfig.getFeedId(),coinConfig.getFeedId());
             }
-            Map<String,FarmingPoolCreateVo> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
-            FarmingPoolCreateVo htokenReward = htokenRewardMap.get(vaultVo.getHtokenType());
-            if(htokenReward!=null){
-                vaultVo.setFarmingPoolId(htokenReward.getPoolId());
+            Map<String,List<FarmingPoolCreateVo>> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
+            List<FarmingPoolCreateVo> htokenRewardList = htokenRewardMap.get(vaultVo.getHtokenType());
+            if(htokenRewardList!=null && htokenRewardList.size()>0){
+                vaultVo.setFarmingPoolId(htokenRewardList.get(0).getPoolId());
             }
             vaultVo.setTvl(vaultVo.getTotalAsset());
             vaultVo.setTvlCapacity("0");

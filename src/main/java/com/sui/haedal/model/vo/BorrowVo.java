@@ -182,6 +182,9 @@ public class BorrowVo implements Serializable {
     @Schema(description = "激励奖励apr")
     private BigDecimal farmingRewardApr;
 
+    @Schema(description = "激励不同币种天奖励列表")
+    private List<FarmingDayRewardVo> dayRewards;
+
     @Schema(description = "borrow对应vaultAddress")
     private List<String> vaultAddress;
 

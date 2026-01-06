@@ -228,10 +228,10 @@ public class BorrowServiceImpl implements BorrowService {
             marketIds.add(vo.getMarketId());
             Map<String,String> feedIds = new HashMap<>();//Asset(vault存入FeedId)+Reward(激励奖励FeedId)
             feedIds.put(vo.getLoanFeedId(),vo.getLoanFeedId());
-            Map<String,FarmingPoolCreateVo> marketRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
-            FarmingPoolCreateVo marketReward = marketRewardMap.get(vo.getMarketId());
-            if(marketReward!=null){
-                vo.setFarmingPoolId(marketReward.getPoolId());
+            Map<String,List<FarmingPoolCreateVo>> marketRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
+            List<FarmingPoolCreateVo> marketRewardList = marketRewardMap.get(vo.getMarketId());
+            if(marketRewardList!=null && marketRewardList.size()>0){
+                vo.setFarmingPoolId(marketRewardList.get(0).getPoolId());
             }
         }
         return vo;
@@ -412,26 +412,24 @@ public class BorrowServiceImpl implements BorrowService {
             marketIds.add(vo.getMarketId());
             results.add(vo);
         }
-
-        Map<String,FarmingPoolCreateVo> poolRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
+        Map<String,List<FarmingPoolCreateVo>> poolRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
-        Integer annualSeconds = 60*60*24*365;
         for (BorrowVo vo : results) {
-            FarmingPoolCreateVo marketReward = poolRewardMap.get(vo.getMarketId());
-            if(marketReward!=null){
-                vo.setFarmingPoolId(marketReward.getPoolId());
+            List<FarmingPoolCreateVo> marketRewardList = poolRewardMap.get(vo.getMarketId());
+            if(marketRewardList!=null && marketRewardList.size()>0){
                 if(vo.getTotalLoanAmount()!=null&&!"".equals(vo.getTotalLoanAmount())){
-                    BigDecimal rewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,marketReward.getRewardFeedId(),marketReward.getRewardPerSecond(),marketReward.getRewardCoinDecimals());
                     BigDecimal loanUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getLoanFeedId(),vo.getTotalLoanAmount(),vo.getLoanCoinDecimals());
                     if(loanUsdAmount.compareTo(BigDecimal.ZERO)==0){
                         continue;
                     }
-                    BigDecimal annualReward =  rewardUsdAmount.multiply(new BigDecimal(annualSeconds));
+                    List<FarmingDayRewardVo> dayRewards = new ArrayList<>();
+                    BigDecimal annualReward = farmingPoolCreateService.farmingRewardCalculate(coinPrice,marketRewardList,dayRewards);
                     BigDecimal farmingRewardApr = BigDecimalUtil.calculate(DecimalType.DIVIDE.getValue(),annualReward,
                             loanUsdAmount,2, RoundingMode.UP);
+                    vo.setFarmingPoolId(marketRewardList.get(0).getPoolId());
                     vo.setFarmingRewardApr(farmingRewardApr);
+                    vo.setDayRewards(dayRewards);
                 }
-
             }
         }
         return results;
