@@ -22,5 +22,11 @@
 
     </select>
 
+    <select id="userFarmingStake" resultType="com.sui.haedal.model.vo.FarmingPoolCreateVo">
+        SELECT fs.pool_id,fpc.stake_token_type,fs.amount user_deposit_amount from farming_stake  fs
+        inner join farming_pool_create fpc on fpc.pool_id=fs.pool_id
+        where fs.`user`=#{userAddress}
+    </select>
+
 
 </mapper>

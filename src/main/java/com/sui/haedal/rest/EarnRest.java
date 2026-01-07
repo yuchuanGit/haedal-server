@@ -2,10 +2,7 @@ package com.sui.haedal.rest;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.sui.haedal.common.R;
-import com.sui.haedal.model.bo.BorrowAssetsSupplyWithdrawQueryBo;
-import com.sui.haedal.model.bo.EarnTotalBo;
-import com.sui.haedal.model.bo.HTokenBo;
-import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
+import com.sui.haedal.model.bo.*;
 import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.EarnService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,11 +55,10 @@ public class EarnRest {
         return R.data(service.userVaultPermission(userAddress));
     }
 
-    @GetMapping("/list")
+    @PostMapping("/list")
     @Operation(summary = "查询earn列表", description = "根据ID查询金库完整信息")
-    public R<List<VaultVo>> listQuery(@RequestParam(required = false) String userAddress,
-                                      @RequestParam(required = false) Integer roleType) {
-        return R.data(service.list(userAddress,roleType));
+    public R<List<VaultVo>> listQuery(@RequestBody VaultQueryBo queryBo) {
+        return R.data(service.list(queryBo));
     }
 
     @GetMapping("/vaultDetail")

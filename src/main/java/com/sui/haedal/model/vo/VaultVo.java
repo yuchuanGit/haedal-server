@@ -199,5 +199,11 @@ public class VaultVo implements Serializable {
     @Schema(description = "激励不同币种天奖励列表")
     private List<FarmingDayRewardVo> dayRewards;
 
+    @Schema(description = "用户激励标识")
+    private Boolean userFarmingFlag;
+
+    @Schema(description = "用户存放激励poolId")
+    private String userFarmingPoolId;
+
 
 }

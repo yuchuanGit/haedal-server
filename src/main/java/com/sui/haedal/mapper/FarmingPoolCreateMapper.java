@@ -13,4 +13,12 @@ public interface FarmingPoolCreateMapper {
      * @return
      */
     List<FarmingPoolCreateVo> farmingPoolRewardPerSecond(FarmingPoolCreateBo bo);
+
+    /**
+     * 用户存入激励记录
+     * @param userAddress
+     * @return
+     */
+    List<FarmingPoolCreateVo> userFarmingStake(String userAddress);
+
 }

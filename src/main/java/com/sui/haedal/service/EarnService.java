@@ -1,10 +1,7 @@
 package com.sui.haedal.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.sui.haedal.model.bo.BorrowAssetsSupplyWithdrawQueryBo;
-import com.sui.haedal.model.bo.EarnTotalBo;
-import com.sui.haedal.model.bo.HTokenBo;
-import com.sui.haedal.model.bo.VaultDepositWithdrawQueryBo;
+import com.sui.haedal.model.bo.*;
 import com.sui.haedal.model.vo.*;
 
 import java.util.List;
@@ -50,7 +47,7 @@ public interface EarnService {
      * earn vault列表
      * @return
      */
-    List<VaultVo> list(String userAddress,Integer roleType);
+    List<VaultVo> list(VaultQueryBo queryBo);
 
     /**
      * Vault详情

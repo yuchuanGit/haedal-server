@@ -57,6 +57,9 @@ public class EarnServiceImpl implements EarnService {
     @Resource
     private FarmingPoolCreateService farmingPoolCreateService;
 
+    @Resource
+    private FarmingPoolCreateMapper farmingPoolCreateMapper;
+
 
 
     /**
@@ -164,34 +167,9 @@ public class EarnServiceImpl implements EarnService {
      * @return
      */
     @Override
-    public List<VaultVo> list(String userAddress,Integer roleType){
+    public List<VaultVo> list(VaultQueryBo queryBo){
         List<VaultVo> vos = new ArrayList<>();
-        LambdaQueryWrapper<Vault> queryWrapper = Wrappers.<Vault>query().lambda();
-        if(userAddress!=null&&roleType!=null&& userAddress!=""){
-            switch (roleType){
-                case 1:
-                    queryWrapper.eq(Vault::getOwner, userAddress).or().eq(Vault::getCurator, userAddress).or().eq(Vault::getGuardian, userAddress);
-                    break;
-                case 2:
-                    queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getCurator,userAddress);
-                    break;
-                case 3:
-                    queryWrapper.eq(Vault::getOwner,userAddress).or().eq(Vault::getGuardian,userAddress);
-                    break;
-                case 4:
-                    queryWrapper.eq(Vault::getCurator,userAddress).or().eq(Vault::getGuardian,userAddress);
-                    break;
-                case 5:
-                    queryWrapper.eq(Vault::getOwner,userAddress);
-                    break;
-                case 6:
-                    queryWrapper.eq(Vault::getCurator,userAddress);
-                    break;
-                case 7:
-                    queryWrapper.eq(Vault::getGuardian,userAddress);
-                    break;
-            }
-        }
+        LambdaQueryWrapper<Vault> queryWrapper = listQueryWrapper(queryBo);
         List<Vault> list = earnMapper.selectList(queryWrapper);
         List<StrategyVo> strategyVos = earnMapper.allVaultStrategy();
         List<VaultVo> vaultApyVos = earnMapper.vaultApy(null);
@@ -233,9 +211,15 @@ public class EarnServiceImpl implements EarnService {
             vos.add(vo);
         }
         Map<String,List<FarmingPoolCreateVo>> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
+        Map<String,FarmingPoolCreateVo> userFarmingStakeMap = new HashMap<>();
+        if(queryBo.getClientSideUserAddress()!=null&&!"".equals(queryBo.getClientSideUserAddress())){
+            List<FarmingPoolCreateVo> userFarmingStakes = farmingPoolCreateMapper.userFarmingStake(queryBo.getClientSideUserAddress());
+            userFarmingStakeMap = userFarmingStakes.stream().collect(Collectors.toMap(FarmingPoolCreateVo::getStakeTokenType,Function.identity(),(v1,v2)->v1));
+        }
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
         for (VaultVo vo : vos) {
             List<FarmingPoolCreateVo> htokenRewardList = htokenRewardMap.get(vo.getHtokenType());
+            vo.setUserFarmingFlag(false);
             if(htokenRewardList!=null&&htokenRewardList.size()>0){
                 if(vo.getTvl()!=null&&!"".equals(vo.getTvl())){
                     BigDecimal tvlUsdAmount = PythOracleUtil.coinUsd(coinPrice,vo.getAssetTypeFeedId(),vo.getTvl(),vo.getAssetDecimals());
@@ -251,8 +235,48 @@ public class EarnServiceImpl implements EarnService {
                     vo.setDayRewards(dayRewards);
                 }
             }
+            if(userFarmingStakeMap.size()>0){
+                FarmingPoolCreateVo userFarmingStake = userFarmingStakeMap.get(vo.getHtokenType());
+                if(userFarmingStake!=null){
+                    vo.setUserFarmingFlag(true);
+                    vo.setUserFarmingPoolId(userFarmingStake.getPoolId());
+                }
+            }
         }
         return vos;
+    }
+
+    private LambdaQueryWrapper<Vault> listQueryWrapper(VaultQueryBo queryBo){
+        LambdaQueryWrapper<Vault> queryWrapper = Wrappers.<Vault>query().lambda();
+        if(queryBo.getUserAddress()!=null&&queryBo.getRoleType()!=null&& queryBo.getUserAddress()!=""){
+            switch (queryBo.getRoleType()){
+                case 1:
+                    queryWrapper.eq(Vault::getOwner, queryBo.getUserAddress()).or().
+                            eq(Vault::getCurator, queryBo.getUserAddress()).or().
+                            eq(Vault::getGuardian, queryBo.getUserAddress());
+                    break;
+                case 2:
+                    queryWrapper.eq(Vault::getOwner,queryBo.getUserAddress()).or().eq(Vault::getCurator,queryBo.getUserAddress());
+                    break;
+                case 3:
+                    queryWrapper.eq(Vault::getOwner,queryBo.getUserAddress()).or().eq(Vault::getGuardian,queryBo.getUserAddress());
+                    break;
+                case 4:
+                    queryWrapper.eq(Vault::getCurator,queryBo.getUserAddress()).or().eq(Vault::getGuardian,queryBo.getUserAddress());
+                    break;
+                case 5:
+                    queryWrapper.eq(Vault::getOwner,queryBo.getUserAddress());
+                    break;
+                case 6:
+                    queryWrapper.eq(Vault::getCurator,queryBo.getUserAddress());
+                    break;
+                case 7:
+                    queryWrapper.eq(Vault::getGuardian,queryBo.getUserAddress());
+                    break;
+            }
+        }
+
+        return queryWrapper;
     }
 
     private void setTvlCapacity(VaultVo vo){

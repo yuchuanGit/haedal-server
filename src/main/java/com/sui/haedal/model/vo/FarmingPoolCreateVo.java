@@ -69,4 +69,7 @@ public class FarmingPoolCreateVo implements Serializable {
 
     @Schema(description = "奖励代币精度")
     private Integer rewardCoinDecimals;
+
+    @Schema(description = "用户存入激励份额数量")
+    private String userDepositAmount;
 }
