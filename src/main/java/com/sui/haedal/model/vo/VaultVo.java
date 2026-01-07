@@ -205,5 +205,8 @@ public class VaultVo implements Serializable {
     @Schema(description = "用户存放激励poolId")
     private String userFarmingPoolId;
 
+    @Schema(description = "池子每份额收益")
+    private BigDecimal  vaultEachSharesYield;
+
 
 }

@@ -77,7 +77,10 @@ public class FarmingPoolCreateServiceImpl implements FarmingPoolCreateService {
             BigDecimal coinRewardUsdAmount = PythOracleUtil.coinUsd(coinPrice,htokenReward.getRewardFeedId(),htokenReward.getRewardPerSecond(),
                     htokenReward.getRewardCoinDecimals());
             rewardUsdAmount = rewardUsdAmount.add(coinRewardUsdAmount);
-            BigDecimal dayReward = coinRewardUsdAmount.multiply(new BigDecimal(daySeconds));
+            BigDecimal rewardAmountB = new BigDecimal(htokenReward.getRewardPerSecond()).
+                    divide(new BigDecimal(Math.pow(10, htokenReward.getRewardCoinDecimals())));//最小单位值除以精度
+            BigDecimal dayReward = rewardAmountB.multiply(new BigDecimal(daySeconds));
+//            BigDecimal dayReward = coinRewardUsdAmount.multiply(new BigDecimal(daySeconds));
             FarmingDayRewardVo farmingDayRewardVo = new FarmingDayRewardVo();
             farmingDayRewardVo.setCoinType(TimePeriodUtil.coinTokenTypeVal(htokenReward.getRewardTokenType()));
             farmingDayRewardVo.setRewardAmount(dayReward.toString());

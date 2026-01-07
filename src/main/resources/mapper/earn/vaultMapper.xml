@@ -2,8 +2,14 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.sui.haedal.mapper.EarnMapper">
 
+    <select id="vaultMinOrMaxTimeYield" resultType="com.sui.haedal.model.vo.VaultYieldVo">
+        SELECT * FROM vault_yield_earned_record where transaction_time_unix=#{minTime} or transaction_time_unix=#{maxTime} ORDER BY transaction_time_unix desc
+    </select>
+    <select id="vaultYield24HourTimeRangeMixAndMaxTime" resultType="com.sui.haedal.model.vo.VaultYieldVo" >
+        SELECT min(transaction_time_unix) min_time,max(transaction_time_unix) max_time FROM vault_yield_earned_record where transaction_time&gt;=DATE_SUB(NOW(), INTERVAL 24 HOUR)  and transaction_time&lt;=NOW()
+    </select>
     <select id="allVaultYield" resultType="com.sui.haedal.model.vo.VaultYieldVo">
-        SELECT v.vault_id,v.asset_type,cc.feed_id asset_type_feed_id,cc.coin_decimals asset_type_decimals,y.earned_asset,y.transaction_time from vault v
+        SELECT v.vault_id,v.asset_type,cc.feed_id asset_type_feed_id,cc.coin_decimals asset_decimals,y.earned_asset,y.transaction_time from vault v
         inner join
         (SELECT vault_id,earned_asset,transaction_time from vault_yield_earned_record where  earned_asset>0 and transaction_time&gt;=DATE_SUB(NOW(), INTERVAL 1 MINUTE) and transaction_time&lt;=NOW()) y on y.vault_id=v.vault_id
         left join coin_config cc on cc.coin_type=v.asset_type

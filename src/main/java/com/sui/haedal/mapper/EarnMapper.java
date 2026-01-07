@@ -17,6 +17,19 @@ public interface EarnMapper extends BaseMapper<Vault> {
 
 
     /**
+     * Vault池最小和最大时间收益
+     * @param minTime
+     * @param maxTime
+     * @return
+     */
+    List<VaultYieldVo> vaultMinOrMaxTimeYield(String  minTime, String maxTime);
+    /**
+     * 获取Vault往前24小时最小时间和最大时间
+     * @return
+     */
+    VaultYieldVo vaultYield24HourTimeRangeMixAndMaxTime();
+
+    /**
      * 所有Vault收益
      * @return
      */

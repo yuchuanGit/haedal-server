@@ -74,7 +74,7 @@ public class EarnServiceImpl implements EarnService {
         Map<String, PythCoinFeedPriceVo> coinPrice = PythOracleUtil.getPythPrice(feedIds);
         BigDecimal allVaultYieldUsdAmount = new BigDecimal(0.00);
         for (VaultYieldVo vaultYieldVo : vaultYieldVos) {
-            BigDecimal vaultYieldUsdAmount = PythOracleUtil.coinUsd(coinPrice,vaultYieldVo.getAssetTypeFeedId(),vaultYieldVo.getEarnedAsset(),vaultYieldVo.getAssetTypeDecimals());
+            BigDecimal vaultYieldUsdAmount = PythOracleUtil.coinUsd(coinPrice,vaultYieldVo.getAssetTypeFeedId(),vaultYieldVo.getEarnedAsset(),vaultYieldVo.getAssetDecimals());
             allVaultYieldUsdAmount = allVaultYieldUsdAmount.add(vaultYieldUsdAmount);
         }
         vo.setAllVaultYieldUsdAmount(allVaultYieldUsdAmount.toString());
@@ -175,6 +175,7 @@ public class EarnServiceImpl implements EarnService {
         List<VaultVo> vaultApyVos = earnMapper.vaultApy(null);
         List<VaultVo> allVaultNewCuratorVos = earnMapper.allVaultNewCurator();
         List<VaultVo> allVaultNewAllocatorVos = earnMapper.allVaultNewAllocator();
+        Map<String,List<VaultYieldVo>> vaultYieldMap = vaultYieldMap();
         Map<String,List<StrategyVo>> vaultMaps = strategyVos.stream().collect(Collectors.groupingBy(StrategyVo::getVaultId));
         Map<String,VaultVo> vaultApyMaps =vaultApyVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
         Map<String,VaultVo> newCuratorMaps =allVaultNewCuratorVos.stream().collect(Collectors.toMap(VaultVo::getVaultId,Function.identity(),(v1,v2)->v1));
@@ -208,6 +209,7 @@ public class EarnServiceImpl implements EarnService {
                 vo.setAllocator(newAllocator.getAllocator());
             }
             htokenTypes.add(vo.getHtokenType());
+            calculateVaultEachSharesYield(vaultYieldMap,vo);
             vos.add(vo);
         }
         Map<String,List<FarmingPoolCreateVo>> htokenRewardMap = farmingPoolCreateService.farmingPoolCreateReward(htokenTypes,false,feedIds);
@@ -246,6 +248,29 @@ public class EarnServiceImpl implements EarnService {
         return vos;
     }
 
+    private Map<String,List<VaultYieldVo>> vaultYieldMap(){
+        Map<String,List<VaultYieldVo>> vaultYieldMap = new HashMap<>();
+        VaultYieldVo times = earnMapper.vaultYield24HourTimeRangeMixAndMaxTime();
+        if(times!=null){
+            List<VaultYieldVo> vaultYieldVos = earnMapper.vaultMinOrMaxTimeYield(times.getMinTime(),times.getMaxTime());
+            vaultYieldMap = vaultYieldVos.stream().collect(Collectors.groupingBy(VaultYieldVo::getVaultId));
+        }
+
+        return vaultYieldMap;
+    }
+    private  void calculateVaultEachSharesYield(Map<String,List<VaultYieldVo>> vaultYieldMap,VaultVo vo){
+        List<VaultYieldVo> vaultYield = vaultYieldMap.get(vo.getVaultId());
+        if(vaultYield!=null && vaultYield.size()>1){
+            BigDecimal currentYield = new BigDecimal(vaultYield.get(0).getEarnedAsset());
+            BigDecimal oneDayAgoYield = new BigDecimal(vaultYield.get(1).getEarnedAsset());
+            BigDecimal dayAgoYield = currentYield.subtract(oneDayAgoYield);
+            BigDecimal totalShares = new BigDecimal(vo.getTotalShares());
+            if(totalShares.compareTo(BigDecimal.ZERO)>0){
+                vo.setVaultEachSharesYield(BigDecimalUtil.calculate(DecimalType.DIVIDE.getValue(),dayAgoYield,new BigDecimal(vo.getTotalShares()),20,RoundingMode.UP));
+            }
+
+        }
+    }
     private LambdaQueryWrapper<Vault> listQueryWrapper(VaultQueryBo queryBo){
         LambdaQueryWrapper<Vault> queryWrapper = Wrappers.<Vault>query().lambda();
         if(queryBo.getUserAddress()!=null&&queryBo.getRoleType()!=null&& queryBo.getUserAddress()!=""){
