@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sui.haedal.mapper.BorrowLiquidateMapper">
+    <select id="borrowLiquidateList" resultType="com.sui.haedal.model.vo.BorrowLiquidateVo">
+        select * from borrow_liquidate where 1=1
+        <if test="userAddress!=null and userAddress!=''">
+            and caller=#{userAddress} and transaction_time&gt;=DATE_SUB(NOW(), INTERVAL 24 HOUR)  and transaction_time&lt;=NOW()
+        </if>
+        order by transaction_time desc
+    </select>
+</mapper>

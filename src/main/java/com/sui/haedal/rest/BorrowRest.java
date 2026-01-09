@@ -2,10 +2,7 @@ package com.sui.haedal.rest;
 
 import com.sui.haedal.common.R;
 import com.sui.haedal.model.bo.BorrowTotalBo;
-import com.sui.haedal.model.vo.BorrowRateLineVo;
-import com.sui.haedal.model.vo.BorrowVo;
-import com.sui.haedal.model.vo.RateModelVo;
-import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
+import com.sui.haedal.model.vo.*;
 import com.sui.haedal.service.BorrowService;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +16,12 @@ public class BorrowRest {
 
     @Autowired
     private BorrowService service;
+
+    @GetMapping("/userLiquidateList")
+    @Operation(summary = "用户清算记录", description = "用户清算记录")
+    public R<List<BorrowLiquidateVo>> borrowLiquidateList(@RequestParam(required = false) String userAddress) {
+        return R.data(service.borrowLiquidateList(userAddress));
+    }
 
     @GetMapping("/GetBorrowList")
     public R<List<BorrowVo>> listQuery() {

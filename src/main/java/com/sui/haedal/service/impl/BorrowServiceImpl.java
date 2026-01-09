@@ -7,9 +7,11 @@ import com.sui.haedal.common.BigDecimalUtil;
 import com.sui.haedal.common.DateUtil;
 import com.sui.haedal.common.PythOracleUtil;
 import com.sui.haedal.common.TimePeriodUtil;
+import com.sui.haedal.mapper.BorrowLiquidateMapper;
 import com.sui.haedal.mapper.BorrowMapper;
 import com.sui.haedal.mapper.CoinConfigMapper;
 import com.sui.haedal.mapper.MultiplyUpdateMarketMapper;
+import com.sui.haedal.model.bo.BorrowLiquidateBo;
 import com.sui.haedal.model.bo.BorrowTotalBo;
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
@@ -54,7 +56,22 @@ public class BorrowServiceImpl implements BorrowService {
     @Resource
     private MultiplyUpdateMarketMapper multiplyUpdateMarketMapper;
 
+    @Resource
+    private BorrowLiquidateMapper borrowLiquidateMapper;
 
+
+
+    /**
+     * 查询用户清算激励
+     * @param userAddress
+     * @return
+     */
+    @Override
+    public List<BorrowLiquidateVo> borrowLiquidateList(String userAddress){
+        BorrowLiquidateBo bo = new BorrowLiquidateBo();
+        bo.setUserAddress(userAddress);
+        return borrowLiquidateMapper.borrowLiquidateList(bo);
+    }
 
     @Override
     public RateModelVo queryBorrowDetailRateModel(BorrowTotalBo conditionBo){

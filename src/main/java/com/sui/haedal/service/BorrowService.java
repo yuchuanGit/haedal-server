@@ -1,15 +1,18 @@
 package com.sui.haedal.service;
 
 import com.sui.haedal.model.bo.BorrowTotalBo;
-import com.sui.haedal.model.entity.Borrow;
-import com.sui.haedal.model.vo.BorrowRateLineVo;
-import com.sui.haedal.model.vo.BorrowVo;
-import com.sui.haedal.model.vo.RateModelVo;
-import com.sui.haedal.model.vo.TimePeriodStatisticsVo;
+import com.sui.haedal.model.vo.*;
 
 import java.util.List;
 
 public interface BorrowService {
+
+    /**
+     * 查询用户清算激励
+     * @param userAddress
+     * @return
+     */
+    List<BorrowLiquidateVo> borrowLiquidateList(String userAddress);
 
     List<BorrowVo> queryList();
 
