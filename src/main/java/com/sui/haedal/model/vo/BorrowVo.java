@@ -188,4 +188,7 @@ public class BorrowVo implements Serializable {
     @Schema(description = "borrow对应vaultAddress")
     private List<String> vaultAddress;
 
+    @Schema(description = "是否循环贷")
+    private Boolean multiplyValid = false;
+
 }

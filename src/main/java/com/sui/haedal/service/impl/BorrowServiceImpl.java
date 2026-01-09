@@ -9,11 +9,13 @@ import com.sui.haedal.common.PythOracleUtil;
 import com.sui.haedal.common.TimePeriodUtil;
 import com.sui.haedal.mapper.BorrowMapper;
 import com.sui.haedal.mapper.CoinConfigMapper;
+import com.sui.haedal.mapper.MultiplyUpdateMarketMapper;
 import com.sui.haedal.model.bo.BorrowTotalBo;
 import com.sui.haedal.model.bo.TimePeriodStatisticsBo;
 import com.sui.haedal.model.bo.YourTotalSupplyLineBo;
 import com.sui.haedal.model.entity.Borrow;
 import com.sui.haedal.model.entity.CoinConfig;
+import com.sui.haedal.model.entity.MultiplyUpdateMarket;
 import com.sui.haedal.model.enums.DecimalType;
 import com.sui.haedal.model.enums.HaedalOperationType;
 import com.sui.haedal.model.vo.*;
@@ -48,6 +50,9 @@ public class BorrowServiceImpl implements BorrowService {
 
     @Resource
     private FarmingPoolCreateService farmingPoolCreateService;
+
+    @Resource
+    private MultiplyUpdateMarketMapper multiplyUpdateMarketMapper;
 
 
 
@@ -233,6 +238,11 @@ public class BorrowServiceImpl implements BorrowService {
             if(marketRewardList!=null && marketRewardList.size()>0){
                 vo.setFarmingPoolId(marketRewardList.get(0).getPoolId());
             }
+            List<MultiplyUpdateMarket>  multiplyMarkets = multiplyUpdateMarketMapper.selectList(Wrappers.<MultiplyUpdateMarket>query().lambda().
+                    eq(MultiplyUpdateMarket::getMarketId,vo.getMarketId()));
+            if(multiplyMarkets.size()>0){
+                vo.setMultiplyValid(multiplyMarkets.get(0).getValid());
+            }
         }
         return vo;
     }
@@ -391,8 +401,8 @@ public class BorrowServiceImpl implements BorrowService {
     @Override
     public List<BorrowVo> queryList() {
         List<Borrow> list = borrowMapper.selectList(Wrappers.<Borrow>query().lambda());
-//        List<CoinConfig> coinConfigList = coinConfigMapper.selectList(Wrappers.<CoinConfig>query().lambda());
-//        Map<String,CoinConfig> coinConfigMap = coinConfigList.stream().collect(Collectors.toMap(CoinConfig::getCoinType, Function.identity(),(v1, v2)->  v1));
+        List<MultiplyUpdateMarket>  multiplyMarkets = multiplyUpdateMarketMapper.selectList(Wrappers.<MultiplyUpdateMarket>query().lambda());
+        Map<String,Boolean> multiplyMarketMap = multiplyMarkets.stream().collect(Collectors.toMap(MultiplyUpdateMarket::getMarketId,MultiplyUpdateMarket::getValid));
         Map<String,CoinConfig> coinConfigMap = getCoinConfigMap();
                 List<BorrowVo> results = new ArrayList<>();
         Set<String> marketIds = new TreeSet();
@@ -410,6 +420,8 @@ public class BorrowServiceImpl implements BorrowService {
             vo.setLtv(ltvConvPercentage(vo.getLtv()));
             feedIds.put(vo.getLoanFeedId(),vo.getLoanFeedId());
             marketIds.add(vo.getMarketId());
+            Boolean multiplyValid = multiplyMarketMap.get(vo.getMarketId());
+            if(multiplyValid!=null)vo.setMultiplyValid(multiplyValid);
             results.add(vo);
         }
         Map<String,List<FarmingPoolCreateVo>> poolRewardMap = farmingPoolCreateService.farmingPoolCreateReward(marketIds,true,feedIds);
